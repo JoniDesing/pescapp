@@ -9,204 +9,156 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
-  --bg: #0a1628;
-  --bg2: #0f1d35;
-  --card: #131f3a;
-  --card2: #182848;
-  --accent: #00e5a0;
-  --accent2: #00c9ff;
-  --warn: #ff6b4a;
-  --gold: #ffc857;
-  --text: #e8edf5;
-  --text2: #8899b4;
-  --border: rgba(255,255,255,0.06);
+  --bg:#0a1628; --bg2:#0f1d35; --card:#131f3a; --card2:#182848;
+  --accent:#00e5a0; --accent2:#00c9ff; --warn:#ff6b4a; --gold:#ffc857;
+  --text:#e8edf5; --text2:#8899b4; --border:rgba(255,255,255,0.06);
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family:'DM Sans',sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-.bg-pattern {
-  position:fixed; top:0; left:0; right:0; bottom:0; z-index:0;
-  background: 
-    radial-gradient(ellipse at 20% 0%, rgba(0,229,160,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(0,201,255,0.06) 0%, transparent 50%),
-    var(--bg);
-}
-.app { position:relative; z-index:1; max-width:480px; margin:0 auto; padding:0 0 100px; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.bg-pattern{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
+  background:radial-gradient(ellipse at 20% 0%,rgba(0,229,160,0.08) 0%,transparent 50%),
+  radial-gradient(ellipse at 80% 100%,rgba(0,201,255,0.06) 0%,transparent 50%),var(--bg);}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 100px;}
 
-.header { padding:24px 20px 16px; text-align:center; }
-.header h1 {
-  font-family:'Instrument Serif',serif;
-  font-size:2.2rem; font-weight:400; letter-spacing:-0.02em;
-  background:linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
-.header .subtitle { font-size:0.8rem; color:var(--text2); letter-spacing:0.15em; text-transform:uppercase; margin-top:4px; }
-.header .location-badge {
-  display:inline-flex; align-items:center; gap:6px;
-  margin-top:10px; padding:6px 14px;
-  background:var(--card); border-radius:20px;
-  font-size:0.75rem; color:var(--accent2);
-}
-.header .location-badge .loc-dot {
-  width:7px; height:7px; border-radius:50%; background:var(--accent);
-  animation:pulse 2s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.header{padding:24px 20px 16px;text-align:center;}
+.header h1{font-family:'Instrument Serif',serif;font-size:2.2rem;font-weight:400;letter-spacing:-0.02em;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.header .subtitle{font-size:0.8rem;color:var(--text2);letter-spacing:0.15em;text-transform:uppercase;margin-top:4px;}
+.header .location-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;
+  background:var(--card);border-radius:20px;font-size:0.75rem;color:var(--accent2);}
+.header .loc-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-.tabs { display:flex; gap:4px; margin:0 16px 20px; background:var(--card); border-radius:16px; padding:4px; }
-.tab {
-  flex:1; padding:12px 8px; text-align:center; border-radius:12px;
-  font-size:0.85rem; font-weight:500; color:var(--text2);
-  cursor:pointer; transition:all 0.3s; border:none; background:none;
-}
-.tab.active {
-  background:linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,201,255,0.1));
-  color:var(--accent); box-shadow:0 0 20px rgba(0,229,160,0.1);
-}
-.tab .tab-icon { font-size:1.3rem; display:block; margin-bottom:4px; }
+.tabs{display:flex;gap:4px;margin:0 16px 20px;background:var(--card);border-radius:16px;padding:4px;}
+.tab{flex:1;padding:12px 8px;text-align:center;border-radius:12px;font-size:0.85rem;font-weight:500;
+  color:var(--text2);cursor:pointer;transition:all 0.3s;border:none;background:none;}
+.tab.active{background:linear-gradient(135deg,rgba(0,229,160,0.15),rgba(0,201,255,0.1));
+  color:var(--accent);box-shadow:0 0 20px rgba(0,229,160,0.1);}
+.tab .tab-icon{font-size:1.3rem;display:block;margin-bottom:4px;}
 
-.section { display:none; padding:0 16px; }
-.section.active { display:block; animation:fadeUp 0.4s ease; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.section{display:none;padding:0 16px;}
+.section.active{display:block;animation:fadeUp 0.4s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-.card {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:20px; padding:20px; margin-bottom:16px;
-  position:relative; overflow:hidden;
-}
-.card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:1px;
-  background:linear-gradient(90deg, transparent, rgba(0,229,160,0.3), transparent);
-}
-.card-title { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text2); margin-bottom:12px; }
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,160,0.3),transparent);}
+.card-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text2);margin-bottom:12px;}
 
 /* Score */
-.bite-score { text-align:center; padding:30px 20px; }
-.score-ring { width:180px; height:180px; margin:0 auto 20px; position:relative; }
-.score-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-.score-ring .bg-circle { fill:none; stroke:var(--card2); stroke-width:8; }
-.score-ring .score-circle { fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1.5s ease, stroke 0.5s; }
-.score-value { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
-.score-value .number { font-family:'Instrument Serif',serif; font-size:3.5rem; line-height:1; }
-.score-value .label { font-size:0.75rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.1em; }
-.score-status { font-size:1.1rem; font-weight:600; margin-bottom:4px; }
-.score-desc { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+.bite-score{text-align:center;padding:30px 20px;}
+.score-ring{width:180px;height:180px;margin:0 auto 20px;position:relative;}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.score-ring .bg-circle{fill:none;stroke:var(--card2);stroke-width:8;}
+.score-ring .score-circle{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s ease,stroke 0.5s;}
+.score-value{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.score-value .number{font-family:'Instrument Serif',serif;font-size:3.5rem;line-height:1;}
+.score-value .label{font-size:0.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em;}
+.score-status{font-size:1.1rem;font-weight:600;margin-bottom:4px;}
+.score-desc{font-size:0.82rem;color:var(--text2);line-height:1.5;}
 
-.weather-banner { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
-.wb-item { text-align:center; }
-.wb-val { font-size:1.1rem; font-weight:700; }
-.wb-lbl { font-size:0.6rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+.weather-banner{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.wb-item{text-align:center;}.wb-val{font-size:1.1rem;font-weight:700;}
+.wb-lbl{font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
 
-.factors { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.factor { background:var(--bg2); border-radius:14px; padding:14px; text-align:center; }
-.factor-icon { font-size:1.5rem; margin-bottom:6px; }
-.factor-label { font-size:0.7rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.08em; }
-.factor-value { font-size:1rem; font-weight:600; margin-top:2px; }
-.factor-sub { font-size:0.7rem; color:var(--text2); margin-top:2px; }
-.factor-quality { display:inline-block; font-size:0.65rem; padding:2px 8px; border-radius:20px; margin-top:6px; font-weight:600; }
-.quality-great { background:rgba(0,229,160,0.15); color:var(--accent); }
-.quality-good { background:rgba(255,200,87,0.15); color:var(--gold); }
-.quality-fair { background:rgba(255,107,74,0.15); color:var(--warn); }
-.quality-poor { background:rgba(255,60,60,0.15); color:#ff4444; }
+.factors{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.factor{background:var(--bg2);border-radius:14px;padding:14px;text-align:center;}
+.factor-icon{font-size:1.5rem;margin-bottom:6px;}
+.factor-label{font-size:0.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;}
+.factor-value{font-size:1rem;font-weight:600;margin-top:2px;}
+.factor-sub{font-size:0.7rem;color:var(--text2);margin-top:2px;}
+.factor-quality{display:inline-block;font-size:0.65rem;padding:2px 8px;border-radius:20px;margin-top:6px;font-weight:600;}
+.quality-great{background:rgba(0,229,160,0.15);color:var(--accent);}
+.quality-good{background:rgba(255,200,87,0.15);color:var(--gold);}
+.quality-fair{background:rgba(255,107,74,0.15);color:var(--warn);}
+.quality-poor{background:rgba(255,60,60,0.15);color:#ff4444;}
 
-.hours-bar { display:flex; gap:2px; margin:12px 0 8px; height:40px; align-items:flex-end; }
-.hour-col { flex:1; border-radius:4px 4px 0 0; min-height:8px; transition:height 0.5s ease; cursor:pointer; position:relative; }
-.hour-col:hover::after {
-  content:attr(data-label); position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
-  background:var(--card2); color:var(--text); font-size:0.65rem; padding:4px 8px; border-radius:6px; white-space:nowrap; z-index:10;
-}
-.hours-labels { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text2); }
+.hours-bar{display:flex;gap:2px;margin:12px 0 8px;height:40px;align-items:flex-end;}
+.hour-col{flex:1;border-radius:4px 4px 0 0;min-height:8px;transition:height 0.5s ease;cursor:pointer;position:relative;}
+.hour-col:hover::after{content:attr(data-label);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--card2);color:var(--text);font-size:0.65rem;padding:4px 8px;border-radius:6px;white-space:nowrap;z-index:10;}
+.hours-labels{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text2);}
 
-.pressure-chart { margin:12px 0 4px; height:50px; }
-.pressure-chart canvas { width:100%; height:100%; }
-.pressure-labels { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text2); }
+.pressure-chart{margin:12px 0 4px;height:50px;}
+.pressure-chart canvas{width:100%;height:100%;}
+.pressure-labels{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text2);}
 
 /* ===== MAP SECTION ===== */
-#mapContainer {
-  width:100%; height:350px;
-  border-radius:16px;
-  overflow:hidden;
-  margin-bottom:12px;
-  border:1px solid var(--border);
-}
-.map-controls {
-  display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
-}
-.map-btn {
-  flex:1; min-width:0;
-  padding:10px 8px; border:none; border-radius:12px;
-  font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:600;
-  cursor:pointer; transition:all 0.3s;
-  display:flex; align-items:center; justify-content:center; gap:5px;
-}
-.map-btn-primary { background:linear-gradient(135deg,var(--accent),#00c488); color:var(--bg); }
-.map-btn-secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
-.map-btn-danger { background:rgba(255,107,74,0.15); color:var(--warn); border:1px solid rgba(255,107,74,0.2); }
-.map-btn:disabled { opacity:0.4; cursor:not-allowed; }
-.map-btn-active { box-shadow:0 0 12px rgba(0,229,160,0.4); }
+#mapContainer{width:100%;height:300px;border-radius:16px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);}
 
-/* Rod list */
-.rod-list { display:flex; flex-direction:column; gap:8px; }
-.rod-item {
-  display:flex; align-items:center; gap:10px;
-  background:var(--bg2); border-radius:12px;
-  padding:12px 14px; transition:all 0.3s;
+/* Big kayak-friendly buttons */
+.big-btn{
+  width:100%;padding:20px;border:none;border-radius:16px;
+  font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;
+  cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
 }
-.rod-item.active { border:1px solid rgba(0,201,255,0.3); background:rgba(0,201,255,0.05); }
-.rod-color {
-  width:14px; height:14px; border-radius:50%; flex-shrink:0;
-  border:2px solid rgba(255,255,255,0.2);
+.big-btn:active{transform:scale(0.97);}
+.big-btn-coast{background:linear-gradient(135deg,var(--accent2),#0099cc);color:var(--bg);
+  box-shadow:0 4px 20px rgba(0,201,255,0.3);margin-bottom:10px;}
+.big-btn-cast{background:linear-gradient(135deg,var(--accent),#00c488);color:var(--bg);
+  box-shadow:0 4px 24px rgba(0,229,160,0.35);margin-bottom:10px;
+  min-height:70px;font-size:1.2rem;}
+.big-btn-cast:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+.big-btn-sm{
+  padding:12px;border:none;border-radius:12px;
+  font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:600;
+  cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;
 }
-.rod-info { flex:1; min-width:0; }
-.rod-name { font-weight:600; font-size:0.85rem; }
-.rod-dist { font-family:'Instrument Serif',serif; font-size:1.3rem; color:var(--accent2); }
-.rod-detail { font-size:0.65rem; color:var(--text2); }
-.rod-actions { display:flex; gap:4px; }
-.rod-action-btn {
-  background:none; border:none; color:var(--text2);
-  cursor:pointer; font-size:0.9rem; padding:4px;
-  border-radius:6px; transition:all 0.2s;
-}
-.rod-action-btn:hover { background:var(--card2); color:var(--text); }
+.big-btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.big-btn-danger{background:rgba(255,107,74,0.12);color:var(--warn);border:1px solid rgba(255,107,74,0.2);}
+.btn-row{display:flex;gap:8px;margin-bottom:12px;}
+.btn-row .big-btn-sm{flex:1;}
 
-.mode-indicator {
-  text-align:center; padding:8px; margin-bottom:10px;
-  background:rgba(0,201,255,0.08); border:1px solid rgba(0,201,255,0.2);
-  border-radius:10px; font-size:0.75rem; color:var(--accent2);
+/* Status bar */
+.status-bar{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:var(--bg2);border-radius:12px;margin-bottom:12px;font-size:0.8rem;
 }
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.status-dot.tracking{background:var(--accent);animation:pulse 1.5s infinite;}
+.status-dot.off{background:var(--text2);}
+.status-info{flex:1;color:var(--text2);}
+.status-info strong{color:var(--text);}
 
-.empty-state {
-  text-align:center; padding:20px; color:var(--text2); font-size:0.8rem; line-height:1.6;
+/* Rod cards */
+.rod-card{
+  background:var(--bg2);border-radius:14px;padding:14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+  transition:all 0.2s;cursor:pointer;
 }
+.rod-card:active{background:var(--card2);}
+.rod-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,0.2);}
+.rod-info{flex:1;min-width:0;}
+.rod-name{font-weight:600;font-size:0.85rem;}
+.rod-dist{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--accent2);line-height:1.2;}
+.rod-meta{font-size:0.65rem;color:var(--text2);}
+.rod-del{background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem;padding:8px;border-radius:8px;}
+.rod-del:hover{background:var(--card2);color:var(--warn);}
+
+.empty-state{text-align:center;padding:24px 16px;color:var(--text2);font-size:0.82rem;line-height:1.7;}
 
 /* Tips */
-.tips-list { display:flex; flex-direction:column; gap:10px; }
-.tip { display:flex; gap:12px; align-items:flex-start; background:var(--bg2); border-radius:12px; padding:14px; }
-.tip-icon { font-size:1.3rem; flex-shrink:0; margin-top:2px; }
-.tip-text { font-size:0.82rem; line-height:1.5; color:var(--text2); }
-.tip-text strong { color:var(--text); }
+.tips-list{display:flex;flex-direction:column;gap:10px;}
+.tip{display:flex;gap:12px;align-items:flex-start;background:var(--bg2);border-radius:12px;padding:14px;}
+.tip-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;}
+.tip-text{font-size:0.82rem;line-height:1.5;color:var(--text2);}
+.tip-text strong{color:var(--text);}
 
-/* Forecast loading */
-.forecast-loading { text-align:center; padding:60px 20px; }
-.forecast-loading .spinner {
-  width:48px; height:48px; border:3px solid var(--card2);
-  border-top-color:var(--accent); border-radius:50%;
-  animation:spin 1s linear infinite; margin:0 auto 16px;
-}
-@keyframes spin { to{transform:rotate(360deg)} }
-.forecast-loading p { color:var(--text2); font-size:0.85rem; }
-.loading-dots::after { content:''; animation:dots 1.5s infinite; }
-@keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+.forecast-loading{text-align:center;padding:60px 20px;}
+.forecast-loading .spinner{width:48px;height:48px;border:3px solid var(--card2);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.forecast-loading p{color:var(--text2);font-size:0.85rem;}
+.loading-dots::after{content:'';animation:dots 1.5s infinite;}
+@keyframes dots{0%,20%{content:''}40%{content:'.'}60%{content:'..'}80%,100%{content:'...'}}
 
-@media(max-width:360px) {
-  .score-ring { width:150px; height:150px; }
-  .score-value .number { font-size:2.8rem; }
-  #mapContainer { height:280px; }
+@media(max-width:360px){
+  .score-ring{width:150px;height:150px;}
+  .score-value .number{font-size:2.8rem;}
+  #mapContainer{height:250px;}
+  .big-btn-cast{min-height:60px;font-size:1rem;}
 }
 </style>
 </head>
@@ -268,27 +220,43 @@ body {
     </div>
   </div>
 
-  <!-- MAP / DISTANCE -->
+  <!-- MAP -->
   <div class="section" id="sec-map">
     <div class="card" style="padding:14px">
       <div id="mapContainer"></div>
-      
-      <div id="modeIndicator" class="mode-indicator" style="display:none">
-        📍 Tocá el mapa para marcar el punto del lance
+
+      <!-- Status -->
+      <div class="status-bar" id="statusBar">
+        <div class="status-dot off" id="statusDot"></div>
+        <div class="status-info" id="statusText">Activá el GPS para empezar</div>
       </div>
 
-      <div class="map-controls">
-        <button class="map-btn map-btn-primary" id="btnAddRod" onclick="startAddRod()">🎣 Nueva caña</button>
-        <button class="map-btn map-btn-secondary" id="btnCenter" onclick="centerOnMe()">📍 Centrar</button>
-        <button class="map-btn map-btn-secondary" id="btnSatToggle" onclick="toggleMapStyle()">🛰️ Satélite</button>
-      </div>
-
-      <div class="card-title" style="margin-top:4px">🎣 Cañas y líneas</div>
-      <div id="rodList">
+      <!-- Buttons - Phase 1: Set coast -->
+      <div id="phase1">
+        <button class="big-btn big-btn-coast" onclick="setCoast()">
+          📍 Marcar Costa
+        </button>
         <div class="empty-state">
-          Tocá <strong>"Nueva caña"</strong> para marcar dónde tirás cada línea.<br>
-          Se marca tu posición como costa y después tocás en el mapa dónde cayó.
+          Marcá la costa antes de salir.<br>Después cada vez que tirás una línea, tocá el botón grande.
         </div>
+      </div>
+
+      <!-- Buttons - Phase 2: Tracking + cast lines -->
+      <div id="phase2" style="display:none">
+        <button class="big-btn big-btn-cast" id="btnCast" onclick="castLine()">
+          🎣 ¡Línea acá!
+        </button>
+        <div class="btn-row">
+          <button class="big-btn-sm big-btn-secondary" onclick="toggleSatellite()">🛰️ Vista</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="centerMap()">📍 Centrar</button>
+          <button class="big-btn-sm big-btn-danger" onclick="resetSession()">🔄 Nueva sesión</button>
+        </div>
+      </div>
+
+      <!-- Rod list -->
+      <div id="rodSection" style="display:none">
+        <div class="card-title" style="margin-top:4px">🎣 Líneas tiradas</div>
+        <div id="rodList"></div>
       </div>
     </div>
   </div>
@@ -301,17 +269,17 @@ body {
         <div class="tip"><div class="tip-icon">🌙</div><div class="tip-text"><strong>Luna nueva y llena</strong> = más actividad. Los 3 días antes son los mejores.</div></div>
         <div class="tip"><div class="tip-icon">📉</div><div class="tip-text"><strong>Presión bajando</strong> (antes de tormenta) genera frenesí. 2-4 hs antes del frente = pique violento.</div></div>
         <div class="tip"><div class="tip-icon">🌅</div><div class="tip-text"><strong>Amanecer y atardecer</strong> son los horarios más consistentes.</div></div>
-        <div class="tip"><div class="tip-icon">💨</div><div class="tip-text"><strong>Viento del oeste</strong> = buen pique. Viento del este = lento. Brisa suave > calma total.</div></div>
-        <div class="tip"><div class="tip-icon">🌡️</div><div class="tip-text"><strong>Presión estable alta</strong> (>1015 hPa) con brisa = excelente para pescar.</div></div>
-        <div class="tip"><div class="tip-icon">☁️</div><div class="tip-text"><strong>Nublado</strong> = pique todo el día. Despejado = peces profundos, pescá temprano o tarde.</div></div>
+        <div class="tip"><div class="tip-icon">💨</div><div class="tip-text"><strong>Viento del oeste</strong> = buen pique. Viento del este = lento.</div></div>
+        <div class="tip"><div class="tip-icon">🌡️</div><div class="tip-text"><strong>Presión estable alta</strong> (>1015 hPa) con brisa = excelente.</div></div>
+        <div class="tip"><div class="tip-icon">☁️</div><div class="tip-text"><strong>Nublado</strong> = pique todo el día. Despejado = pescá temprano o tarde.</div></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">🎯 Tips para el lance</div>
       <div class="tips-list">
-        <div class="tip"><div class="tip-icon">📏</div><div class="tip-text"><strong>Medí tus lances.</strong> Saber la distancia te ayuda a repetir el punto donde pican.</div></div>
-        <div class="tip"><div class="tip-icon">🧵</div><div class="tip-text"><strong>Marcá la línea.</strong> Ponele un nudo o cinta a la distancia que funciona.</div></div>
-        <div class="tip"><div class="tip-icon">🗺️</div><div class="tip-text"><strong>Usá el mapa</strong> para registrar cada caña y repetir lances exitosos.</div></div>
+        <div class="tip"><div class="tip-icon">🛶</div><div class="tip-text"><strong>Desde el kayak:</strong> Marcá la costa, navegá y tocá "Línea acá" cada vez que tirás. Así sabés exacto las distancias.</div></div>
+        <div class="tip"><div class="tip-icon">📏</div><div class="tip-text"><strong>Medí tus lances.</strong> Saber la distancia a la costa te ayuda a volver al mismo punto.</div></div>
+        <div class="tip"><div class="tip-icon">🗺️</div><div class="tip-text"><strong>Guardá las sesiones</strong> para repetir los puntos donde hubo pique.</div></div>
       </div>
     </div>
   </div>
@@ -319,24 +287,22 @@ body {
 
 <script>
 // =================== GLOBALS ===================
-let userLat=null, userLng=null, weatherData=null;
-let map=null, mapReady=false, userMarker=null;
-let satelliteLayer=null, streetLayer=null, isSatellite=true;
+let userLat=null,userLng=null,weatherData=null;
+let map=null,mapReady=false,userMarker=null,trackWatchId=null;
+let satelliteLayer=null,streetLayer=null,isSatellite=true;
+let coastPoint=null,coastMarker=null;
+let trackPath=[],trackPolyline=null;
+const ROD_COLORS=['#00e5a0','#00c9ff','#ffc857','#ff6b4a','#c084fc','#fb7185','#34d399','#f59e0b','#60a5fa','#a78bfa'];
+let rods=[];
 
-const ROD_COLORS = ['#00e5a0','#00c9ff','#ffc857','#ff6b4a','#c084fc','#fb7185','#34d399','#f59e0b','#60a5fa','#a78bfa'];
-let rods = []; // {id, name, color, coastLat, coastLng, castLat, castLng, distance, marker, castMarker, line}
-let rodIdCounter = 0;
-let placingRod = null; // rod being placed (waiting for map tap)
+// Load session
+try{
+  const s=JSON.parse(localStorage.getItem('pescapp_session')||'null');
+  if(s){coastPoint=s.coast;rods=s.rods||[];trackPath=s.track||[];}
+}catch(e){}
 
-// Load saved rods
-try { 
-  const saved = JSON.parse(localStorage.getItem('pescapp_rods')||'[]');
-  if(saved.length) { rods = saved; rodIdCounter = Math.max(...saved.map(r=>r.id))+1; }
-} catch(e){}
-
-function saveRods(){
-  const toSave = rods.map(r=>({id:r.id,name:r.name,color:r.color,coastLat:r.coastLat,coastLng:r.coastLng,castLat:r.castLat,castLng:r.castLng,distance:r.distance}));
-  try{localStorage.setItem('pescapp_rods',JSON.stringify(toSave));}catch(e){}
+function saveSession(){
+  try{localStorage.setItem('pescapp_session',JSON.stringify({coast:coastPoint,rods:rods.map(r=>({name:r.name,color:r.color,lat:r.lat,lng:r.lng,dist:r.dist,time:r.time})),track:trackPath}));}catch(e){}
 }
 
 // =================== TABS ===================
@@ -344,254 +310,243 @@ function switchTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['forecast','map','tips'][i]===tab));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+tab).classList.add('active');
-  if(tab==='map') initMap();
+  if(tab==='map'){initMap();setTimeout(()=>{if(map)map.invalidateSize();},200);}
 }
 
 // =================== MAP ===================
 function initMap(){
-  if(mapReady) { map.invalidateSize(); return; }
-  
-  const lat = userLat||-31.42;
-  const lng = userLng||-64.50;
-  
-  map = L.map('mapContainer',{zoomControl:false, attributionControl:false}).setView([lat,lng],17);
-  
-  satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19});
-  streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
-  
+  if(mapReady){map.invalidateSize();return;}
+  const lat=userLat||-31.42,lng=userLng||-64.50;
+  map=L.map('mapContainer',{zoomControl:false,attributionControl:false}).setView([lat,lng],16);
+  satelliteLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19});
+  streetLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
   satelliteLayer.addTo(map);
+
+  // User marker (big, visible)
+  updateUserMarker(lat,lng);
   
-  // User position marker
-  const userIcon = L.divIcon({
-    html:'<div style="width:18px;height:18px;background:var(--accent);border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(0,229,160,0.6)"></div>',
-    iconSize:[18,18], iconAnchor:[9,9], className:''
-  });
-  userMarker = L.marker([lat,lng],{icon:userIcon}).addTo(map);
+  // Restore coast if exists
+  if(coastPoint){
+    addCoastMarker();
+    showPhase2();
+    startTracking();
+  }
   
-  // Map click handler
-  map.on('click', onMapClick);
+  // Restore track path
+  if(trackPath.length>1){
+    trackPolyline=L.polyline(trackPath,{color:'#00c9ff',weight:3,opacity:0.5,dashArray:'4,6'}).addTo(map);
+  }
   
-  // Restore saved rods on map
-  rods.forEach(rod => {
-    addRodToMap(rod);
-  });
+  // Restore rods
+  rods.forEach(r=>addRodMarker(r));
   renderRodList();
   
-  mapReady = true;
+  mapReady=true;
+}
+
+function updateUserMarker(lat,lng){
+  if(!map)return;
+  const icon=L.divIcon({
+    html:`<div style="position:relative">
+      <div style="width:20px;height:20px;background:#00c9ff;border:3px solid white;border-radius:50%;box-shadow:0 0 15px rgba(0,201,255,0.6)"></div>
+      <div style="position:absolute;top:-2px;left:-2px;width:24px;height:24px;border:2px solid rgba(0,201,255,0.4);border-radius:50%;animation:pulse 2s infinite"></div>
+    </div>`,iconSize:[20,20],iconAnchor:[10,10],className:''
+  });
+  if(userMarker)userMarker.setLatLng([lat,lng]);
+  else userMarker=L.marker([lat,lng],{icon,zIndexOffset:1000}).addTo(map);
+}
+
+function addCoastMarker(){
+  if(!map||!coastPoint)return;
+  if(coastMarker)map.removeLayer(coastMarker);
+  const icon=L.divIcon({
+    html:`<div style="display:flex;flex-direction:column;align-items:center">
+      <div style="background:#00c9ff;color:#000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.5)">⛱️ COSTA</div>
+      <div style="width:2px;height:6px;background:#00c9ff"></div>
+      <div style="width:10px;height:10px;background:#00c9ff;border-radius:50%;border:2px solid white"></div>
+    </div>`,iconSize:[60,30],iconAnchor:[30,30],className:''
+  });
+  coastMarker=L.marker([coastPoint.lat,coastPoint.lng],{icon}).addTo(map);
+}
+
+function addRodMarker(rod){
+  if(!map)return;
+  const icon=L.divIcon({
+    html:`<div style="display:flex;flex-direction:column;align-items:center">
+      <div style="background:${rod.color};color:#000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${rod.name} · ${rod.dist}m</div>
+      <div style="width:2px;height:6px;background:${rod.color}"></div>
+      <div style="width:10px;height:10px;background:${rod.color};border-radius:50%;border:2px solid white"></div>
+    </div>`,iconSize:[90,30],iconAnchor:[45,30],className:''
+  });
+  rod.marker=L.marker([rod.lat,rod.lng],{icon}).addTo(map);
   
-  // Try to get better position
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      userLat=pos.coords.latitude; userLng=pos.coords.longitude;
-      userMarker.setLatLng([userLat,userLng]);
-      map.setView([userLat,userLng],17);
-    },()=>{},{enableHighAccuracy:true,timeout:10000});
+  // Line to coast
+  if(coastPoint){
+    rod.line=L.polyline([[coastPoint.lat,coastPoint.lng],[rod.lat,rod.lng]],{
+      color:rod.color,weight:2,dashArray:'6,4',opacity:0.7
+    }).addTo(map);
   }
 }
 
-function toggleMapStyle(){
-  if(!map) return;
-  if(isSatellite){
-    map.removeLayer(satelliteLayer);
-    streetLayer.addTo(map);
-    document.getElementById('btnSatToggle').innerHTML='🛰️ Satélite';
-  } else {
-    map.removeLayer(streetLayer);
-    satelliteLayer.addTo(map);
-    document.getElementById('btnSatToggle').innerHTML='🗺️ Mapa';
-  }
-  isSatellite=!isSatellite;
-}
-
-function centerOnMe(){
-  if(!map) return;
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      userLat=pos.coords.latitude; userLng=pos.coords.longitude;
-      userMarker.setLatLng([userLat,userLng]);
-      map.setView([userLat,userLng],17);
-    },()=>{
-      if(userLat) map.setView([userLat,userLng],17);
-    },{enableHighAccuracy:true,timeout:10000});
-  }
-}
-
-// =================== ROD MANAGEMENT ===================
-function startAddRod(){
-  if(!map) return;
-  
-  // Get current position as coast
-  const btn = document.getElementById('btnAddRod');
-  btn.disabled=true;
+// =================== COAST ===================
+function setCoast(){
+  const btn=document.querySelector('.big-btn-coast');
   btn.innerHTML='📡 Obteniendo GPS<span class="loading-dots"></span>';
+  btn.disabled=true;
   
   navigator.geolocation.getCurrentPosition(pos=>{
-    const coastLat=pos.coords.latitude, coastLng=pos.coords.longitude;
-    userLat=coastLat; userLng=coastLng;
-    userMarker.setLatLng([coastLat,coastLng]);
+    coastPoint={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
     
-    const colorIdx = rods.length % ROD_COLORS.length;
-    const rod = {
-      id: rodIdCounter++,
-      name: `Caña ${rods.length+1}`,
-      color: ROD_COLORS[colorIdx],
-      coastLat, coastLng,
-      castLat:null, castLng:null,
-      distance:0
-    };
+    updateUserMarker(userLat,userLng);
+    map.setView([userLat,userLng],17);
+    addCoastMarker();
     
-    rods.push(rod);
-    placingRod = rod;
+    showPhase2();
+    startTracking();
+    saveSession();
     
-    document.getElementById('modeIndicator').style.display='block';
-    document.getElementById('modeIndicator').innerHTML=`📍 Tocá en el mapa donde cayó la línea de <strong style="color:${rod.color}">${rod.name}</strong>`;
-    
-    btn.disabled=false;
-    btn.innerHTML='🎣 Nueva caña';
-    
-    renderRodList();
-  },()=>{
-    btn.disabled=false;
-    btn.innerHTML='🎣 Nueva caña';
-    alert('No se pudo obtener tu ubicación. Activá el GPS.');
+    updateStatus('tracking','GPS siguiendo tu recorrido. ¡A pescar!');
+  },err=>{
+    btn.innerHTML='📍 Marcar Costa';btn.disabled=false;
+    alert('No se pudo obtener la ubicación. Activá el GPS y dale permiso.');
   },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
 
-function onMapClick(e){
-  if(!placingRod) return;
-  
-  const rod = placingRod;
-  rod.castLat = e.latlng.lat;
-  rod.castLng = e.latlng.lng;
-  rod.distance = Math.round(haversineDistance(rod.coastLat,rod.coastLng,rod.castLat,rod.castLng));
-  
-  addRodToMap(rod);
-  saveRods();
-  
-  placingRod = null;
-  document.getElementById('modeIndicator').style.display='none';
-  renderRodList();
+function showPhase2(){
+  document.getElementById('phase1').style.display='none';
+  document.getElementById('phase2').style.display='block';
+  document.getElementById('rodSection').style.display='block';
 }
 
-function addRodToMap(rod){
-  if(!map || !rod.castLat) return;
-  
-  // Coast marker (small dot)
-  const coastIcon = L.divIcon({
-    html:`<div style="width:10px;height:10px;background:${rod.color};border:2px solid white;border-radius:50%;opacity:0.8"></div>`,
-    iconSize:[10,10], iconAnchor:[5,5], className:''
-  });
-  rod.marker = L.marker([rod.coastLat,rod.coastLng],{icon:coastIcon}).addTo(map);
-  
-  // Cast marker (flag-like)
-  const castIcon = L.divIcon({
-    html:`<div style="display:flex;flex-direction:column;align-items:center">
-      <div style="background:${rod.color};color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4)">${rod.name} · ${rod.distance}m</div>
-      <div style="width:2px;height:8px;background:${rod.color}"></div>
-      <div style="width:8px;height:8px;background:${rod.color};border-radius:50%;border:2px solid white"></div>
-    </div>`,
-    iconSize:[80,34], iconAnchor:[40,34], className:''
-  });
-  rod.castMarker = L.marker([rod.castLat,rod.castLng],{icon:castIcon,draggable:true}).addTo(map);
-  
-  // Allow dragging cast marker to adjust
-  rod.castMarker.on('dragend',function(e){
-    const pos = e.target.getLatLng();
-    rod.castLat = pos.lat;
-    rod.castLng = pos.lng;
-    rod.distance = Math.round(haversineDistance(rod.coastLat,rod.coastLng,rod.castLat,rod.castLng));
+// =================== GPS TRACKING ===================
+function startTracking(){
+  if(trackWatchId)return;
+  trackWatchId=navigator.geolocation.watchPosition(pos=>{
+    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+    updateUserMarker(userLat,userLng);
     
-    // Update line
-    if(rod.line) rod.line.setLatLngs([[rod.coastLat,rod.coastLng],[rod.castLat,rod.castLng]]);
+    // Add to track
+    trackPath.push([userLat,userLng]);
+    if(trackPolyline)trackPolyline.addLatLng([userLat,userLng]);
+    else{
+      trackPolyline=L.polyline(trackPath,{color:'#00c9ff',weight:3,opacity:0.4,dashArray:'4,6'}).addTo(map);
+    }
     
-    // Update label
-    const newIcon = L.divIcon({
-      html:`<div style="display:flex;flex-direction:column;align-items:center">
-        <div style="background:${rod.color};color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4)">${rod.name} · ${rod.distance}m</div>
-        <div style="width:2px;height:8px;background:${rod.color}"></div>
-        <div style="width:8px;height:8px;background:${rod.color};border-radius:50%;border:2px solid white"></div>
-      </div>`,
-      iconSize:[80,34], iconAnchor:[40,34], className:''
-    });
-    rod.castMarker.setIcon(newIcon);
-    
-    saveRods();
-    renderRodList();
-  });
+    // Update status with distance from coast
+    if(coastPoint){
+      const d=Math.round(haversineDistance(coastPoint.lat,coastPoint.lng,userLat,userLng));
+      updateStatus('tracking',`<strong>${d}m</strong> de la costa · GPS activo`);
+    }
+  },err=>{
+    updateStatus('off','GPS perdido. Intentando reconectar...');
+  },{enableHighAccuracy:true,maximumAge:3000,timeout:10000});
+}
+
+function stopTracking(){
+  if(trackWatchId){navigator.geolocation.clearWatch(trackWatchId);trackWatchId=null;}
+}
+
+// =================== CAST LINE ===================
+function castLine(){
+  if(!coastPoint||!userLat)return;
   
-  // Line
-  rod.line = L.polyline([[rod.coastLat,rod.coastLng],[rod.castLat,rod.castLng]],{
-    color:rod.color, weight:2, dashArray:'6,4', opacity:0.8
-  }).addTo(map);
-}
-
-function removeRod(id){
-  const idx = rods.findIndex(r=>r.id===id);
-  if(idx===-1) return;
-  const rod = rods[idx];
-  if(rod.marker) map.removeLayer(rod.marker);
-  if(rod.castMarker) map.removeLayer(rod.castMarker);
-  if(rod.line) map.removeLayer(rod.line);
-  rods.splice(idx,1);
-  saveRods();
-  renderRodList();
-}
-
-function renameRod(id){
-  const rod = rods.find(r=>r.id===id);
-  if(!rod) return;
-  const name = prompt('Nombre de la caña:',rod.name);
-  if(!name) return;
-  rod.name=name;
+  const dist=Math.round(haversineDistance(coastPoint.lat,coastPoint.lng,userLat,userLng));
+  const colorIdx=rods.length%ROD_COLORS.length;
+  const rod={
+    name:`Línea ${rods.length+1}`,
+    color:ROD_COLORS[colorIdx],
+    lat:userLat,lng:userLng,
+    dist:dist,
+    time:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})
+  };
   
-  // Update marker label if exists
-  if(rod.castMarker && rod.castLat){
-    const newIcon = L.divIcon({
-      html:`<div style="display:flex;flex-direction:column;align-items:center">
-        <div style="background:${rod.color};color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4)">${rod.name} · ${rod.distance}m</div>
-        <div style="width:2px;height:8px;background:${rod.color}"></div>
-        <div style="width:8px;height:8px;background:${rod.color};border-radius:50%;border:2px solid white"></div>
-      </div>`,
-      iconSize:[80,34], iconAnchor:[40,34], className:''
-    });
-    rod.castMarker.setIcon(newIcon);
-  }
-  saveRods();
+  rods.push(rod);
+  addRodMarker(rod);
   renderRodList();
+  saveSession();
+  
+  // Visual feedback
+  const btn=document.getElementById('btnCast');
+  btn.innerHTML=`✅ Línea ${rods.length} — ${dist}m`;
+  btn.style.background='linear-gradient(135deg,var(--gold),#e6a800)';
+  setTimeout(()=>{
+    btn.innerHTML='🎣 ¡Línea acá!';
+    btn.style.background='';
+  },2000);
 }
 
-function zoomToRod(id){
-  const rod = rods.find(r=>r.id===id);
-  if(!rod||!rod.castLat||!map) return;
-  const bounds = L.latLngBounds([[rod.coastLat,rod.coastLng],[rod.castLat,rod.castLng]]);
-  map.fitBounds(bounds,{padding:[40,40]});
-}
-
+// =================== ROD LIST ===================
 function renderRodList(){
-  const container = document.getElementById('rodList');
+  const list=document.getElementById('rodList');
   if(rods.length===0){
-    container.innerHTML='<div class="empty-state">Tocá <strong>"Nueva caña"</strong> para marcar dónde tirás cada línea.<br>Se marca tu posición como costa y después tocás en el mapa dónde cayó.</div>';
+    list.innerHTML='<div class="empty-state">Navegá hasta el punto y tocá <strong>"🎣 ¡Línea acá!"</strong></div>';
     return;
   }
-  
-  container.innerHTML = rods.map(rod=>{
-    const isPending = !rod.castLat;
-    return `<div class="rod-item ${isPending?'active':''}" onclick="zoomToRod(${rod.id})">
-      <div class="rod-color" style="background:${rod.color}"></div>
+  list.innerHTML=rods.map((r,i)=>`
+    <div class="rod-card" onclick="zoomRod(${i})">
+      <div class="rod-dot" style="background:${r.color}"></div>
       <div class="rod-info">
-        <div class="rod-name">${rod.name}</div>
-        ${isPending
-          ? '<div class="rod-detail" style="color:var(--accent2)">⏳ Esperando que marques en el mapa...</div>'
-          : `<div class="rod-dist">${rod.distance}m</div>
-             <div class="rod-detail">Podés arrastrar el marcador en el mapa para ajustar</div>`
-        }
+        <div class="rod-name">${r.name}</div>
+        <div class="rod-dist">${r.dist}m</div>
+        <div class="rod-meta">${r.time} · Tocá para ver en mapa</div>
       </div>
-      <div class="rod-actions">
-        <button class="rod-action-btn" onclick="event.stopPropagation();renameRod(${rod.id})" title="Renombrar">✏️</button>
-        <button class="rod-action-btn" onclick="event.stopPropagation();removeRod(${rod.id})" title="Eliminar">🗑️</button>
-      </div>
-    </div>`;
-  }).join('');
+      <button class="rod-del" onclick="event.stopPropagation();deleteRod(${i})" title="Eliminar">✕</button>
+    </div>
+  `).join('');
+}
+
+function zoomRod(i){
+  if(!map||!rods[i])return;
+  const r=rods[i];
+  if(coastPoint){
+    map.fitBounds([[coastPoint.lat,coastPoint.lng],[r.lat,r.lng]],{padding:[50,50]});
+  }else{
+    map.setView([r.lat,r.lng],17);
+  }
+}
+
+function deleteRod(i){
+  const r=rods[i];
+  if(r.marker)map.removeLayer(r.marker);
+  if(r.line)map.removeLayer(r.line);
+  rods.splice(i,1);
+  // Rename
+  rods.forEach((r,j)=>r.name=`Línea ${j+1}`);
+  renderRodList();saveSession();
+}
+
+function resetSession(){
+  if(!confirm('¿Borrar la costa, el recorrido y todas las líneas?'))return;
+  stopTracking();
+  rods.forEach(r=>{if(r.marker)map.removeLayer(r.marker);if(r.line)map.removeLayer(r.line);});
+  rods=[];
+  if(coastMarker){map.removeLayer(coastMarker);coastMarker=null;}
+  if(trackPolyline){map.removeLayer(trackPolyline);trackPolyline=null;}
+  trackPath=[];coastPoint=null;
+  document.getElementById('phase1').style.display='block';
+  document.getElementById('phase2').style.display='none';
+  document.getElementById('rodSection').style.display='none';
+  updateStatus('off','Sesión reiniciada. Marcá la costa para empezar.');
+  renderRodList();
+  try{localStorage.removeItem('pescapp_session');}catch(e){}
+}
+
+function toggleSatellite(){
+  if(!map)return;
+  if(isSatellite){map.removeLayer(satelliteLayer);streetLayer.addTo(map);}
+  else{map.removeLayer(streetLayer);satelliteLayer.addTo(map);}
+  isSatellite=!isSatellite;
+}
+
+function centerMap(){
+  if(!map||!userLat)return;
+  map.setView([userLat,userLng],17);
+}
+
+function updateStatus(type,html){
+  document.getElementById('statusDot').className=`status-dot ${type}`;
+  document.getElementById('statusText').innerHTML=html;
 }
 
 // =================== HAVERSINE ===================
@@ -615,55 +570,24 @@ function getMoonPhase(date){
   else if(pct<0.6875){name='Gibosa Menguante';icon='🌖';quality=70;}
   else if(pct<0.8125){name='Cuarto Menguante';icon='🌗';quality=50;}
   else{name='Menguante';icon='🌘';quality=60;}
-  return {name,icon,quality,phase:pct,dayInCycle:phase};
+  return{name,icon,quality,phase:pct,dayInCycle:phase};
 }
 
 // =================== WEATHER HELPERS ===================
 function windDirName(d){const n=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];return n[Math.round(d/22.5)%16];}
-function windQuality(d){
-  if(d>=225&&d<=315)return{q:'great',t:'Ideal (oeste)'};
-  if((d>=180&&d<225)||(d>315&&d<=360))return{q:'good',t:'Bueno'};
-  if((d>=135&&d<180)||(d>0&&d<=45))return{q:'fair',t:'Regular'};
-  return{q:'poor',t:'Desfavorable (este)'};
-}
-function analyzePressure(hp){
-  if(!hp||hp.length<12)return{trend:'stable',quality:'good',text:'Estable',score:70};
-  const f6=hp.slice(0,6).reduce((a,b)=>a+b,0)/6;const l6=hp.slice(-6).reduce((a,b)=>a+b,0)/6;
-  const diff=l6-f6;const avg=hp.reduce((a,b)=>a+b,0)/hp.length;
-  if(diff<-2)return{trend:'falling_fast',quality:'great',text:'Bajando rápido — ¡frenesí!',score:95};
-  if(diff<-0.5)return{trend:'falling',quality:'great',text:'Bajando — peces activos',score:85};
-  if(diff>2)return{trend:'rising_fast',quality:'good',text:'Subiendo rápido — post-tormenta',score:80};
-  if(diff>0.5)return{trend:'rising',quality:'good',text:'Subiendo — mejorando',score:75};
-  if(avg>1015)return{trend:'stable_high',quality:'good',text:'Estable alta — buenas condiciones',score:72};
-  if(avg<1008)return{trend:'stable_low',quality:'poor',text:'Estable baja — pique lento',score:35};
-  return{trend:'stable',quality:'fair',text:'Estable',score:60};
-}
-function cloudQuality(c){
-  if(c>=70)return{q:'great',t:'Nublado — ideal',s:90};
-  if(c>=40)return{q:'good',t:'Parcial — bueno',s:75};
-  if(c>=20)return{q:'fair',t:'Poco nublado',s:60};
-  return{q:'fair',t:'Despejado — UV alto',s:50};
-}
+function windQuality(d){if(d>=225&&d<=315)return{q:'great',t:'Ideal (oeste)'};if((d>=180&&d<225)||(d>315&&d<=360))return{q:'good',t:'Bueno'};if((d>=135&&d<180)||(d>0&&d<=45))return{q:'fair',t:'Regular'};return{q:'poor',t:'Desfavorable (este)'};}
+function analyzePressure(hp){if(!hp||hp.length<12)return{trend:'stable',quality:'good',text:'Estable',score:70};const f6=hp.slice(0,6).reduce((a,b)=>a+b,0)/6;const l6=hp.slice(-6).reduce((a,b)=>a+b,0)/6;const diff=l6-f6;const avg=hp.reduce((a,b)=>a+b,0)/hp.length;if(diff<-2)return{trend:'falling_fast',quality:'great',text:'Bajando rápido — ¡frenesí!',score:95};if(diff<-0.5)return{trend:'falling',quality:'great',text:'Bajando — peces activos',score:85};if(diff>2)return{trend:'rising_fast',quality:'good',text:'Subiendo rápido',score:80};if(diff>0.5)return{trend:'rising',quality:'good',text:'Subiendo — mejorando',score:75};if(avg>1015)return{trend:'stable_high',quality:'good',text:'Estable alta — buenas',score:72};if(avg<1008)return{trend:'stable_low',quality:'poor',text:'Estable baja — lento',score:35};return{trend:'stable',quality:'fair',text:'Estable',score:60};}
+function cloudQuality(c){if(c>=70)return{q:'great',t:'Nublado — ideal',s:90};if(c>=40)return{q:'good',t:'Parcial',s:75};if(c>=20)return{q:'fair',t:'Poco nublado',s:60};return{q:'fair',t:'Despejado',s:50};}
 
-// =================== BITE SCORE ===================
 function calculateBiteScore(date,w){
   const moon=getMoonPhase(date);let score=0;
-  const wt={moon:25,pressure:25,wind:15,cloud:10,season:10,prox:15};
-  score+=moon.quality*(wt.moon/100);
-  const pA=w?analyzePressure(w.hourlyPressure):{score:60};
-  score+=pA.score*(wt.pressure/100);
-  if(w&&w.windDir!==undefined){
-    const wq=windQuality(w.windDir);
-    const wsS=w.windSpeed<=15?80:w.windSpeed<=25?60:30;
-    const wdS=wq.q==='great'?95:wq.q==='good'?75:wq.q==='fair'?55:35;
-    score+=((wdS+wsS)/2)*(wt.wind/100);
-  }else score+=60*(wt.wind/100);
-  if(w&&w.cloud!==undefined)score+=cloudQuality(w.cloud).s*(wt.cloud/100);
-  else score+=60*(wt.cloud/100);
-  const ss=[65,60,70,80,75,50,45,50,65,75,80,70];
-  score+=ss[date.getMonth()]*(wt.season/100);
+  score+=moon.quality*0.25;
+  const pA=w?analyzePressure(w.hourlyPressure):{score:60};score+=pA.score*0.25;
+  if(w&&w.windDir!==undefined){const wq=windQuality(w.windDir);const ws=w.windSpeed<=15?80:w.windSpeed<=25?60:30;const wd=wq.q==='great'?95:wq.q==='good'?75:wq.q==='fair'?55:35;score+=((wd+ws)/2)*0.15;}else score+=60*0.15;
+  if(w&&w.cloud!==undefined)score+=cloudQuality(w.cloud).s*0.10;else score+=60*0.10;
+  const ss=[65,60,70,80,75,50,45,50,65,75,80,70];score+=ss[date.getMonth()]*0.10;
   const dtM=Math.min(moon.dayInCycle,29.53-moon.dayInCycle,Math.abs(moon.dayInCycle-14.76));
-  score+=Math.max(0,100-dtM*15)*(wt.prox/100);
+  score+=Math.max(0,100-dtM*15)*0.15;
   return Math.round(Math.min(100,Math.max(10,score)));
 }
 
@@ -682,118 +606,53 @@ function getSolunarHours(date,sunrise,sunset){
 
 // =================== FETCH WEATHER ===================
 async function fetchWeather(lat,lng){
-  try{
-    const tom=new Date();tom.setDate(tom.getDate()+1);const ds=tom.toISOString().split('T')[0];
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`+
-      `&hourly=temperature_2m,surface_pressure,windspeed_10m,winddirection_10m,cloudcover,uv_index`+
-      `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,windspeed_10m_max,winddirection_10m_dominant,precipitation_probability_max,uv_index_max`+
-      `&start_date=${ds}&end_date=${ds}&timezone=auto`;
-    const res=await fetch(url);const data=await res.json();
-    if(!data.daily||!data.hourly)throw new Error('Bad');
-    const d=data.daily,hr=data.hourly;
-    const srP=d.sunrise[0].split('T')[1].split(':'),ssP=d.sunset[0].split('T')[1].split(':');
-    return{
-      tempMax:d.temperature_2m_max[0],tempMin:d.temperature_2m_min[0],
-      windSpeed:d.windspeed_10m_max[0],windDir:d.winddirection_10m_dominant[0],
-      precipProb:d.precipitation_probability_max[0],uvMax:d.uv_index_max[0],
-      sunrise:parseInt(srP[0])+parseInt(srP[1])/60,sunriseStr:d.sunrise[0].split('T')[1].substring(0,5),
-      sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,sunsetStr:d.sunset[0].split('T')[1].substring(0,5),
-      cloud:hr.cloudcover?hr.cloudcover.reduce((a,b)=>a+b,0)/hr.cloudcover.length:50,
-      hourlyPressure:hr.surface_pressure||[],hourlyTemp:hr.temperature_2m||[]
-    };
-  }catch(e){console.error(e);return null;}
-}
+  try{const tom=new Date();tom.setDate(tom.getDate()+1);const ds=tom.toISOString().split('T')[0];
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,surface_pressure,windspeed_10m,winddirection_10m,cloudcover,uv_index&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,windspeed_10m_max,winddirection_10m_dominant,precipitation_probability_max,uv_index_max&start_date=${ds}&end_date=${ds}&timezone=auto`;
+  const res=await fetch(url);const data=await res.json();if(!data.daily||!data.hourly)throw 0;
+  const d=data.daily,hr=data.hourly;const srP=d.sunrise[0].split('T')[1].split(':'),ssP=d.sunset[0].split('T')[1].split(':');
+  return{tempMax:d.temperature_2m_max[0],tempMin:d.temperature_2m_min[0],windSpeed:d.windspeed_10m_max[0],windDir:d.winddirection_10m_dominant[0],precipProb:d.precipitation_probability_max[0],uvMax:d.uv_index_max[0],sunrise:parseInt(srP[0])+parseInt(srP[1])/60,sunriseStr:d.sunrise[0].split('T')[1].substring(0,5),sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,sunsetStr:d.sunset[0].split('T')[1].substring(0,5),cloud:hr.cloudcover?hr.cloudcover.reduce((a,b)=>a+b,0)/hr.cloudcover.length:50,hourlyPressure:hr.surface_pressure||[]};}catch(e){return null;}}
 
-async function reverseGeocode(lat,lng){
-  try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=es`);
-    const d=await r.json();
-    return d.address?(d.address.city||d.address.town||d.address.village||d.address.state||`${lat.toFixed(2)}°`):`${lat.toFixed(2)}°`;
-  }catch(e){return `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;}
-}
+async function reverseGeocode(lat,lng){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=es`);const d=await r.json();return d.address?(d.address.city||d.address.town||d.address.village||d.address.state||`${lat.toFixed(2)}°`):`${lat.toFixed(2)}°`;}catch(e){return`${lat.toFixed(2)}°`;}}
 
 // =================== DRAW PRESSURE ===================
-function drawPressureChart(hp){
-  const c=document.getElementById('pressureCanvas');if(!c||!hp||!hp.length)return;
-  const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;
-  const rect=c.getBoundingClientRect();c.width=rect.width*dpr;c.height=rect.height*dpr;ctx.scale(dpr,dpr);
-  const w=rect.width,h=rect.height;const mn=Math.min(...hp)-1,mx=Math.max(...hp)+1,rng=mx-mn||1;
-  const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,201,255,0.2)');g.addColorStop(1,'rgba(0,201,255,0)');
-  ctx.beginPath();ctx.moveTo(0,h);
-  hp.forEach((v,i)=>{ctx.lineTo((i/(hp.length-1))*w,h-((v-mn)/rng)*h*0.85-h*0.05);});
-  ctx.lineTo(w,h);ctx.closePath();ctx.fillStyle=g;ctx.fill();
-  ctx.beginPath();hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.strokeStyle='#00c9ff';ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle='#8899b4';ctx.font='10px DM Sans';ctx.fillText(Math.round(mx)+' hPa',4,12);ctx.fillText(Math.round(mn)+' hPa',4,h-2);
-}
+function drawPressureChart(hp){const c=document.getElementById('pressureCanvas');if(!c||!hp||!hp.length)return;const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;const rect=c.getBoundingClientRect();c.width=rect.width*dpr;c.height=rect.height*dpr;ctx.scale(dpr,dpr);const w=rect.width,h=rect.height;const mn=Math.min(...hp)-1,mx=Math.max(...hp)+1,rng=mx-mn||1;const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,201,255,0.2)');g.addColorStop(1,'rgba(0,201,255,0)');ctx.beginPath();ctx.moveTo(0,h);hp.forEach((v,i)=>{ctx.lineTo((i/(hp.length-1))*w,h-((v-mn)/rng)*h*0.85-h*0.05);});ctx.lineTo(w,h);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='#00c9ff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#8899b4';ctx.font='10px DM Sans';ctx.fillText(Math.round(mx)+' hPa',4,12);ctx.fillText(Math.round(mn)+' hPa',4,h-2);}
 
 // =================== RENDER FORECAST ===================
 function renderForecast(w){
-  const tom=new Date();tom.setDate(tom.getDate()+1);
-  const moon=getMoonPhase(tom),score=calculateBiteScore(tom,w),hours=getSolunarHours(tom,w?.sunrise,w?.sunset);
-  document.getElementById('forecastLoading').style.display='none';
-  document.getElementById('forecastContent').style.display='block';
-  const circle=document.getElementById('scoreCircle');const circ=2*Math.PI*85;
-  const off=circ-(score/100)*circ;
+  const tom=new Date();tom.setDate(tom.getDate()+1);const moon=getMoonPhase(tom),score=calculateBiteScore(tom,w),hours=getSolunarHours(tom,w?.sunrise,w?.sunset);
+  document.getElementById('forecastLoading').style.display='none';document.getElementById('forecastContent').style.display='block';
+  const circle=document.getElementById('scoreCircle');const circ=2*Math.PI*85;const off=circ-(score/100)*circ;
   const sc=score>=75?'var(--accent)':score>=55?'var(--gold)':score>=35?'var(--warn)':'#ff4444';
   setTimeout(()=>{circle.style.strokeDashoffset=off;circle.style.stroke=sc;},300);
   document.getElementById('scoreNum').textContent=score;
-  let st,ds;
-  if(score>=80){st='🔥 ¡Pique excelente!';ds='Condiciones ideales. Salí a pescar sin dudar.';}
-  else if(score>=65){st='✅ Buen pique esperado';ds='Buenas chances. Concentrate en amanecer y atardecer.';}
-  else if(score>=45){st='⚖️ Pique moderado';ds='Condiciones regulares. Aprovechá las mejores horas.';}
-  else{st='😴 Pique flojo';ds='Día complicado. Mucha paciencia y buenos horarios.';}
-  document.getElementById('scoreStatus').textContent=st;
-  document.getElementById('scoreDesc').textContent=ds;
-  if(w){
-    document.getElementById('weatherBanner').innerHTML=`
-      <div class="wb-item"><div class="wb-val">${Math.round(w.tempMin)}°/${Math.round(w.tempMax)}°</div><div class="wb-lbl">Temp</div></div>
-      <div class="wb-item"><div class="wb-val">${Math.round(w.windSpeed)} km/h</div><div class="wb-lbl">Viento ${windDirName(w.windDir)}</div></div>
-      <div class="wb-item"><div class="wb-val">${w.precipProb}%</div><div class="wb-lbl">Prob. lluvia</div></div>`;
-  }
+  let st,ds;if(score>=80){st='🔥 ¡Pique excelente!';ds='Condiciones ideales. Salí a pescar sin dudar.';}else if(score>=65){st='✅ Buen pique esperado';ds='Buenas chances. Concentrate en amanecer y atardecer.';}else if(score>=45){st='⚖️ Pique moderado';ds='Condiciones regulares. Aprovechá las mejores horas.';}else{st='😴 Pique flojo';ds='Día complicado. Mucha paciencia.';}
+  document.getElementById('scoreStatus').textContent=st;document.getElementById('scoreDesc').textContent=ds;
+  if(w){document.getElementById('weatherBanner').innerHTML=`<div class="wb-item"><div class="wb-val">${Math.round(w.tempMin)}°/${Math.round(w.tempMax)}°</div><div class="wb-lbl">Temp</div></div><div class="wb-item"><div class="wb-val">${Math.round(w.windSpeed)} km/h</div><div class="wb-lbl">Viento ${windDirName(w.windDir)}</div></div><div class="wb-item"><div class="wb-val">${w.precipProb}%</div><div class="wb-lbl">Lluvia</div></div>`;}
   const hBar=document.getElementById('hoursBar');hBar.innerHTML='';
-  hours.forEach((val,h)=>{const col=document.createElement('div');col.className='hour-col';
-    col.style.height=Math.max(8,val*0.4)+'px';
-    col.style.background=val>=75?'var(--accent)':val>=50?'var(--gold)':val>=25?'var(--warn)':'var(--card2)';
-    col.setAttribute('data-label',`${h}:00 — ${val}%`);hBar.appendChild(col);});
-  
+  hours.forEach((val,h)=>{const col=document.createElement('div');col.className='hour-col';col.style.height=Math.max(8,val*0.4)+'px';col.style.background=val>=75?'var(--accent)':val>=50?'var(--gold)':val>=25?'var(--warn)':'var(--card2)';col.setAttribute('data-label',`${h}:00 — ${val}%`);hBar.appendChild(col);});
   const pA=w?analyzePressure(w.hourlyPressure):null;const wq=w?windQuality(w.windDir):null;const cq=w?cloudQuality(w.cloud):null;
   const factors=[
     {icon:moon.icon,label:'Fase Lunar',value:moon.name,quality:moon.quality>=80?'great':moon.quality>=60?'good':moon.quality>=40?'fair':'poor',qualityText:moon.quality>=80?'Ideal':moon.quality>=60?'Bueno':moon.quality>=40?'Regular':'Flojo'},
-    {icon:'📊',label:'Presión',value:pA?pA.text.split('—')[0].trim():'Sin datos',sub:w?`${Math.round(w.hourlyPressure[0]||0)} hPa`:'',quality:pA?pA.quality:'fair',qualityText:pA?(pA.score>=80?'Excelente':pA.score>=60?'Bueno':'Regular'):'?'},
-    {icon:'💨',label:'Viento',value:w?`${windDirName(w.windDir)} ${Math.round(w.windSpeed)}km/h`:'Sin datos',quality:wq?wq.q:'fair',qualityText:wq?wq.t:'?'},
-    {icon:'☁️',label:'Nubosidad',value:w?`${Math.round(w.cloud)}%`:'Sin datos',quality:cq?cq.q:'fair',qualityText:cq?cq.t.split('—')[0].trim():'?'},
+    {icon:'📊',label:'Presión',value:pA?pA.text.split('—')[0].trim():'?',sub:w?`${Math.round(w.hourlyPressure[0]||0)} hPa`:'',quality:pA?pA.quality:'fair',qualityText:pA?(pA.score>=80?'Excelente':pA.score>=60?'Bueno':'Regular'):'?'},
+    {icon:'💨',label:'Viento',value:w?`${windDirName(w.windDir)} ${Math.round(w.windSpeed)}km/h`:'?',quality:wq?wq.q:'fair',qualityText:wq?wq.t:'?'},
+    {icon:'☁️',label:'Nubosidad',value:w?`${Math.round(w.cloud)}%`:'?',quality:cq?cq.q:'fair',qualityText:cq?cq.t:'?'},
     {icon:'🌅',label:'Amanecer',value:w?w.sunriseStr:'~7:10',quality:'great',qualityText:'Hora pico'},
     {icon:'🌇',label:'Atardecer',value:w?w.sunsetStr:'~18:30',quality:'great',qualityText:'Hora pico'}
   ];
-  document.getElementById('factorsGrid').innerHTML=factors.map(f=>`
-    <div class="factor"><div class="factor-icon">${f.icon}</div><div class="factor-label">${f.label}</div>
-    <div class="factor-value">${f.value}</div>${f.sub?`<div class="factor-sub">${f.sub}</div>`:''}
-    <div class="factor-quality quality-${f.quality}">${f.qualityText}</div></div>`).join('');
-  if(w&&w.hourlyPressure.length>0){
-    document.getElementById('pressureCard').style.display='block';
-    setTimeout(()=>drawPressureChart(w.hourlyPressure),100);
-    const tc={falling_fast:'var(--accent)',falling:'var(--accent)',rising_fast:'var(--gold)',rising:'var(--gold)',stable_high:'var(--accent2)',stable_low:'var(--warn)',stable:'var(--text2)'};
-    document.getElementById('pressureTrend').innerHTML=`<span style="color:${tc[pA.trend]||'var(--text2)'}">${pA.text}</span>`;
-  }
+  document.getElementById('factorsGrid').innerHTML=factors.map(f=>`<div class="factor"><div class="factor-icon">${f.icon}</div><div class="factor-label">${f.label}</div><div class="factor-value">${f.value}</div>${f.sub?`<div class="factor-sub">${f.sub}</div>`:''}
+  <div class="factor-quality quality-${f.quality}">${f.qualityText}</div></div>`).join('');
+  if(w&&w.hourlyPressure.length>0){document.getElementById('pressureCard').style.display='block';setTimeout(()=>drawPressureChart(w.hourlyPressure),100);const tc={falling_fast:'var(--accent)',falling:'var(--accent)',rising_fast:'var(--gold)',rising:'var(--gold)',stable_high:'var(--accent2)',stable_low:'var(--warn)',stable:'var(--text2)'};document.getElementById('pressureTrend').innerHTML=`<span style="color:${tc[pA.trend]||'var(--text2)'}">${pA.text}</span>`;}
 }
 
 // =================== INIT ===================
 async function initForecast(){
   document.getElementById('locationBadge').style.display='inline-flex';
-  try{
-    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:300000}));
-    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
-    const locName=await reverseGeocode(userLat,userLng);
-    document.getElementById('locationText').textContent=locName;
-    weatherData=await fetchWeather(userLat,userLng);
-    renderForecast(weatherData);
-  }catch(e){
-    userLat=-31.42;userLng=-64.5;
-    document.getElementById('locationText').textContent='Villa Carlos Paz (default)';
-    weatherData=await fetchWeather(userLat,userLng);
-    renderForecast(weatherData);
-  }
+  try{const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:300000}));
+  userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+  const locName=await reverseGeocode(userLat,userLng);document.getElementById('locationText').textContent=locName;
+  weatherData=await fetchWeather(userLat,userLng);renderForecast(weatherData);
+  }catch(e){userLat=-31.42;userLng=-64.5;document.getElementById('locationText').textContent='Villa Carlos Paz (default)';
+  weatherData=await fetchWeather(userLat,userLng);renderForecast(weatherData);}
 }
 
 initForecast();
