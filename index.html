@@ -322,14 +322,12 @@ function initMap(){
   streetLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
   satelliteLayer.addTo(map);
 
-  // User marker (big, visible)
   updateUserMarker(lat,lng);
   
   // Restore coast if exists
   if(coastPoint){
     addCoastMarker();
     showPhase2();
-    startTracking();
   }
   
   // Restore track path
@@ -342,6 +340,14 @@ function initMap(){
   renderRodList();
   
   mapReady=true;
+  
+  // Start background GPS immediately - runs forever
+  ensureGPS(()=>{
+    if(map)map.setView([userLat,userLng],16);
+    updateStatus(coastPoint?'tracking':'off', coastPoint?`GPS activo`:'GPS listo. Marcá la costa.');
+  },()=>{
+    updateStatus('off','Activá el GPS para empezar');
+  });
 }
 
 function updateUserMarker(lat,lng){
@@ -390,27 +396,33 @@ function addRodMarker(rod){
 
 // =================== COAST ===================
 function setCoast(){
-  const btn=document.querySelector('.big-btn-coast');
-  btn.innerHTML='📡 Obteniendo GPS<span class="loading-dots"></span>';
-  btn.disabled=true;
-  
-  navigator.geolocation.getCurrentPosition(pos=>{
-    coastPoint={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
-    
-    updateUserMarker(userLat,userLng);
-    map.setView([userLat,userLng],17);
-    addCoastMarker();
-    
-    showPhase2();
-    startTracking();
-    saveSession();
-    
-    updateStatus('tracking','GPS siguiendo tu recorrido. ¡A pescar!');
-  },err=>{
-    btn.innerHTML='📍 Marcar Costa';btn.disabled=false;
-    alert('No se pudo obtener la ubicación. Activá el GPS y dale permiso.');
-  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  if(!userLat||!userLng){
+    // No position yet - start GPS and wait
+    const btn=document.querySelector('.big-btn-coast');
+    btn.innerHTML='📡 Esperando GPS<span class="loading-dots"></span>';
+    btn.disabled=true;
+    ensureGPS(()=>{
+      btn.disabled=false;
+      btn.innerHTML='📍 Marcar Costa';
+      doSetCoast();
+    },()=>{
+      btn.disabled=false;
+      btn.innerHTML='📍 Marcar Costa';
+      alert('No se pudo obtener la ubicación. Activá el GPS y dale permiso.');
+    });
+    return;
+  }
+  doSetCoast();
+}
+
+function doSetCoast(){
+  coastPoint={lat:userLat,lng:userLng};
+  updateUserMarker(userLat,userLng);
+  map.setView([userLat,userLng],17);
+  addCoastMarker();
+  showPhase2();
+  saveSession();
+  updateStatus('tracking',`<strong>0m</strong> de la costa · GPS activo`);
 }
 
 function showPhase2(){
@@ -419,32 +431,67 @@ function showPhase2(){
   document.getElementById('rodSection').style.display='block';
 }
 
-// =================== GPS TRACKING ===================
-function startTracking(){
-  if(trackWatchId)return;
-  trackWatchId=navigator.geolocation.watchPosition(pos=>{
+// =================== GPS — always-on background ===================
+// One single watchPosition that runs the whole time the app is open.
+// Coast and Cast just read userLat/userLng — no extra GPS calls.
+let gpsRunning=false;
+
+function ensureGPS(onSuccess,onError){
+  if(gpsRunning&&userLat){if(onSuccess)onSuccess();return;}
+  // First time or after error: try getCurrentPosition as kickstart
+  navigator.geolocation.getCurrentPosition(pos=>{
     userLat=pos.coords.latitude;userLng=pos.coords.longitude;
-    updateUserMarker(userLat,userLng);
-    
-    // Add to track
-    trackPath.push([userLat,userLng]);
-    if(trackPolyline)trackPolyline.addLatLng([userLat,userLng]);
-    else{
-      trackPolyline=L.polyline(trackPath,{color:'#00c9ff',weight:3,opacity:0.4,dashArray:'4,6'}).addTo(map);
-    }
-    
-    // Update status with distance from coast
-    if(coastPoint){
-      const d=Math.round(haversineDistance(coastPoint.lat,coastPoint.lng,userLat,userLng));
-      updateStatus('tracking',`<strong>${d}m</strong> de la costa · GPS activo`);
-    }
+    if(map)updateUserMarker(userLat,userLng);
+    startBackgroundGPS();
+    if(onSuccess)onSuccess();
   },err=>{
-    updateStatus('off','GPS perdido. Intentando reconectar...');
-  },{enableHighAccuracy:true,maximumAge:3000,timeout:10000});
+    // Fallback: try watchPosition directly
+    startBackgroundGPS();
+    // Wait a bit for first position
+    let waited=0;
+    const check=setInterval(()=>{
+      waited+=500;
+      if(userLat&&userLng){clearInterval(check);if(onSuccess)onSuccess();return;}
+      if(waited>=12000){clearInterval(check);if(onError)onError();}
+    },500);
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:5000});
+}
+
+function startBackgroundGPS(){
+  // Clear any existing watch
+  if(trackWatchId!=null){
+    try{navigator.geolocation.clearWatch(trackWatchId);}catch(e){}
+    trackWatchId=null;
+  }
+  // Small delay to let browser release old GPS lock
+  setTimeout(()=>{
+    trackWatchId=navigator.geolocation.watchPosition(pos=>{
+      userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+      gpsRunning=true;
+      if(map)updateUserMarker(userLat,userLng);
+      // Track path if session active
+      if(coastPoint){
+        trackPath.push([userLat,userLng]);
+        if(trackPolyline)trackPolyline.addLatLng([userLat,userLng]);
+        else if(map){trackPolyline=L.polyline(trackPath,{color:'#00c9ff',weight:3,opacity:0.4,dashArray:'4,6'}).addTo(map);}
+        const d=Math.round(haversineDistance(coastPoint.lat,coastPoint.lng,userLat,userLng));
+        updateStatus('tracking',`<strong>${d}m</strong> de la costa · GPS activo`);
+      }
+    },err=>{
+      gpsRunning=false;
+      updateStatus('off','GPS perdido. Intentando reconectar...');
+      // Auto-retry after 3 seconds
+      setTimeout(()=>startBackgroundGPS(),3000);
+    },{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+  },300);
 }
 
 function stopTracking(){
-  if(trackWatchId){navigator.geolocation.clearWatch(trackWatchId);trackWatchId=null;}
+  if(trackWatchId!=null){
+    try{navigator.geolocation.clearWatch(trackWatchId);}catch(e){}
+    trackWatchId=null;
+  }
+  gpsRunning=false;
 }
 
 // =================== CAST LINE ===================
@@ -491,9 +538,32 @@ function renderRodList(){
         <div class="rod-dist">${r.dist}m</div>
         <div class="rod-meta">${r.time} · Tocá para ver en mapa</div>
       </div>
-      <button class="rod-del" onclick="event.stopPropagation();deleteRod(${i})" title="Eliminar">✕</button>
+      <div style="display:flex;gap:2px">
+        <button class="rod-del" onclick="event.stopPropagation();renameRod(${i})" title="Editar nombre" style="color:var(--accent2)">✏️</button>
+        <button class="rod-del" onclick="event.stopPropagation();deleteRod(${i})" title="Eliminar">✕</button>
+      </div>
     </div>
   `).join('');
+}
+
+function renameRod(i){
+  const rod=rods[i];
+  if(!rod)return;
+  const name=prompt('Nombre de la línea/caña:',rod.name);
+  if(!name||!name.trim())return;
+  rod.name=name.trim();
+  // Update map marker label
+  if(rod.marker&&map){
+    const newIcon=L.divIcon({
+      html:`<div style="display:flex;flex-direction:column;align-items:center">
+        <div style="background:${rod.color};color:#000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${rod.name} · ${rod.dist}m</div>
+        <div style="width:2px;height:6px;background:${rod.color}"></div>
+        <div style="width:10px;height:10px;background:${rod.color};border-radius:50%;border:2px solid white"></div>
+      </div>`,iconSize:[90,30],iconAnchor:[45,30],className:''
+    });
+    rod.marker.setIcon(newIcon);
+  }
+  renderRodList();saveSession();
 }
 
 function zoomRod(i){
@@ -511,14 +581,12 @@ function deleteRod(i){
   if(r.marker)map.removeLayer(r.marker);
   if(r.line)map.removeLayer(r.line);
   rods.splice(i,1);
-  // Rename
-  rods.forEach((r,j)=>r.name=`Línea ${j+1}`);
   renderRodList();saveSession();
 }
 
 function resetSession(){
   if(!confirm('¿Borrar la costa, el recorrido y todas las líneas?'))return;
-  stopTracking();
+  // DON'T stop GPS - just clear session data
   rods.forEach(r=>{if(r.marker)map.removeLayer(r.marker);if(r.line)map.removeLayer(r.line);});
   rods=[];
   if(coastMarker){map.removeLayer(coastMarker);coastMarker=null;}
@@ -527,9 +595,12 @@ function resetSession(){
   document.getElementById('phase1').style.display='block';
   document.getElementById('phase2').style.display='none';
   document.getElementById('rodSection').style.display='none';
+  const coastBtn=document.querySelector('.big-btn-coast');
+  if(coastBtn){coastBtn.disabled=false;coastBtn.innerHTML='📍 Marcar Costa';}
   updateStatus('off','Sesión reiniciada. Marcá la costa para empezar.');
   renderRodList();
   try{localStorage.removeItem('pescapp_session');}catch(e){}
+  // GPS keeps running in background - userLat/userLng stay updated
 }
 
 function toggleSatellite(){
@@ -612,7 +683,7 @@ async function fetchWeather(lat,lng){
   const d=data.daily,hr=data.hourly;const srP=d.sunrise[0].split('T')[1].split(':'),ssP=d.sunset[0].split('T')[1].split(':');
   return{tempMax:d.temperature_2m_max[0],tempMin:d.temperature_2m_min[0],windSpeed:d.windspeed_10m_max[0],windDir:d.winddirection_10m_dominant[0],precipProb:d.precipitation_probability_max[0],uvMax:d.uv_index_max[0],sunrise:parseInt(srP[0])+parseInt(srP[1])/60,sunriseStr:d.sunrise[0].split('T')[1].substring(0,5),sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,sunsetStr:d.sunset[0].split('T')[1].substring(0,5),cloud:hr.cloudcover?hr.cloudcover.reduce((a,b)=>a+b,0)/hr.cloudcover.length:50,hourlyPressure:hr.surface_pressure||[]};}catch(e){return null;}}
 
-async function reverseGeocode(lat,lng){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=es`);const d=await r.json();return d.address?(d.address.city||d.address.town||d.address.village||d.address.state||`${lat.toFixed(2)}°`):`${lat.toFixed(2)}°`;}catch(e){return`${lat.toFixed(2)}°`;}}
+async function reverseGeocode(lat,lng){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&accept-language=es`);const d=await r.json();if(d.address){const a=d.address;const loc=a.village||a.town||a.suburb||a.city_district||a.city||a.county||a.state||'';const region=a.state||a.county||'';return loc+(region&&region!==loc?`, ${region}`:'');}return`${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;}catch(e){return`${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;}}
 
 // =================== DRAW PRESSURE ===================
 function drawPressureChart(hp){const c=document.getElementById('pressureCanvas');if(!c||!hp||!hp.length)return;const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;const rect=c.getBoundingClientRect();c.width=rect.width*dpr;c.height=rect.height*dpr;ctx.scale(dpr,dpr);const w=rect.width,h=rect.height;const mn=Math.min(...hp)-1,mx=Math.max(...hp)+1,rng=mx-mn||1;const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,201,255,0.2)');g.addColorStop(1,'rgba(0,201,255,0)');ctx.beginPath();ctx.moveTo(0,h);hp.forEach((v,i)=>{ctx.lineTo((i/(hp.length-1))*w,h-((v-mn)/rng)*h*0.85-h*0.05);});ctx.lineTo(w,h);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='#00c9ff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#8899b4';ctx.font='10px DM Sans';ctx.fillText(Math.round(mx)+' hPa',4,12);ctx.fillText(Math.round(mn)+' hPa',4,h-2);}
