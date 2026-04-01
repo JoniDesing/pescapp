@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PescApp · Tu Compañero de Pesca</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a1628;
+  --bg2: #0f1d35;
+  --card: #131f3a;
+  --card2: #182848;
+  --accent: #00e5a0;
+  --accent2: #00c9ff;
+  --warn: #ff6b4a;
+  --gold: #ffc857;
+  --text: #e8edf5;
+  --text2: #8899b4;
+  --border: rgba(255,255,255,0.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.bg-pattern {
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:0;
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(0,229,160,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(0,201,255,0.06) 0%, transparent 50%),
+    var(--bg);
+}
+.app { position:relative; z-index:1; max-width:480px; margin:0 auto; padding:0 0 100px; }
+
+.header { padding:24px 20px 16px; text-align:center; }
+.header h1 {
+  font-family:'Instrument Serif',serif;
+  font-size:2.2rem; font-weight:400; letter-spacing:-0.02em;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.header .subtitle { font-size:0.8rem; color:var(--text2); letter-spacing:0.15em; text-transform:uppercase; margin-top:4px; }
+.header .location-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:10px; padding:6px 14px;
+  background:var(--card); border-radius:20px;
+  font-size:0.75rem; color:var(--accent2);
+}
+.header .location-badge .loc-dot {
+  width:7px; height:7px; border-radius:50%; background:var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.tabs { display:flex; gap:4px; margin:0 16px 20px; background:var(--card); border-radius:16px; padding:4px; }
+.tab {
+  flex:1; padding:12px 8px; text-align:center; border-radius:12px;
+  font-size:0.85rem; font-weight:500; color:var(--text2);
+  cursor:pointer; transition:all 0.3s; border:none; background:none;
+}
+.tab.active {
+  background:linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,201,255,0.1));
+  color:var(--accent); box-shadow:0 0 20px rgba(0,229,160,0.1);
+}
+.tab .tab-icon { font-size:1.3rem; display:block; margin-bottom:4px; }
+
+.section { display:none; padding:0 16px; }
+.section.active { display:block; animation: fadeUp 0.4s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:20px; margin-bottom:16px;
+  position:relative; overflow:hidden;
+}
+.card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(0,229,160,0.3), transparent);
+}
+.card-title { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text2); margin-bottom:12px; }
+
+.bite-score { text-align:center; padding:30px 20px; }
+.score-ring { width:180px; height:180px; margin:0 auto 20px; position:relative; }
+.score-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+.score-ring .bg-circle { fill:none; stroke:var(--card2); stroke-width:8; }
+.score-ring .score-circle { fill:none; stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset 1.5s ease, stroke 0.5s; }
+.score-value { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+.score-value .number { font-family:'Instrument Serif',serif; font-size:3.5rem; line-height:1; }
+.score-value .label { font-size:0.75rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.1em; }
+.score-status { font-size:1.1rem; font-weight:600; margin-bottom:4px; }
+.score-desc { font-size:0.82rem; color:var(--text2); line-height:1.5; }
+
+.weather-banner {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+  margin-top:16px; padding-top:16px;
+  border-top:1px solid var(--border);
+}
+.wb-item { text-align:center; }
+.wb-val { font-size:1.1rem; font-weight:700; }
+.wb-lbl { font-size:0.6rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+
+.factors { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.factor { background:var(--bg2); border-radius:14px; padding:14px; text-align:center; }
+.factor-icon { font-size:1.5rem; margin-bottom:6px; }
+.factor-label { font-size:0.7rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.08em; }
+.factor-value { font-size:1rem; font-weight:600; margin-top:2px; }
+.factor-sub { font-size:0.7rem; color:var(--text2); margin-top:2px; }
+.factor-quality { display:inline-block; font-size:0.65rem; padding:2px 8px; border-radius:20px; margin-top:6px; font-weight:600; }
+.quality-great { background:rgba(0,229,160,0.15); color:var(--accent); }
+.quality-good { background:rgba(255,200,87,0.15); color:var(--gold); }
+.quality-fair { background:rgba(255,107,74,0.15); color:var(--warn); }
+.quality-poor { background:rgba(255,60,60,0.15); color:#ff4444; }
+
+.hours-bar { display:flex; gap:2px; margin:12px 0 8px; height:40px; align-items:flex-end; }
+.hour-col { flex:1; border-radius:4px 4px 0 0; min-height:8px; transition:height 0.5s ease; cursor:pointer; position:relative; }
+.hour-col:hover::after {
+  content:attr(data-label); position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+  background:var(--card2); color:var(--text); font-size:0.65rem; padding:4px 8px; border-radius:6px; white-space:nowrap; z-index:10;
+}
+.hours-labels { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text2); }
+
+.pressure-chart { margin:12px 0 4px; height:50px; position:relative; }
+.pressure-chart canvas { width:100%; height:100%; }
+.pressure-labels { display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text2); }
+
+.tips-list { display:flex; flex-direction:column; gap:10px; }
+.tip { display:flex; gap:12px; align-items:flex-start; background:var(--bg2); border-radius:12px; padding:14px; }
+.tip-icon { font-size:1.3rem; flex-shrink:0; margin-top:2px; }
+.tip-text { font-size:0.82rem; line-height:1.5; color:var(--text2); }
+.tip-text strong { color:var(--text); }
+
+.distance-display { text-align:center; padding:10px 0 20px; }
+.dist-big { font-family:'Instrument Serif',serif; font-size:4rem; line-height:1; background:linear-gradient(135deg,var(--accent2),var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.dist-unit { font-size:0.85rem; color:var(--text2); }
+.dist-secondary { margin-top:8px; font-size:0.8rem; color:var(--text2); }
+.measure-steps { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+.measure-step { display:flex; gap:14px; align-items:center; background:var(--bg2); border-radius:14px; padding:16px; transition:all 0.3s; }
+.measure-step.completed { border:1px solid rgba(0,229,160,0.3); background:rgba(0,229,160,0.05); }
+.measure-step.current { border:1px solid rgba(0,201,255,0.3); background:rgba(0,201,255,0.05); }
+.step-num { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; flex-shrink:0; background:var(--card2); color:var(--text2); }
+.measure-step.completed .step-num { background:var(--accent); color:var(--bg); }
+.measure-step.current .step-num { background:var(--accent2); color:var(--bg); }
+.step-info { flex:1; }
+.step-title { font-weight:600; font-size:0.9rem; margin-bottom:2px; }
+.step-desc { font-size:0.75rem; color:var(--text2); }
+.step-coord { font-size:0.7rem; color:var(--accent); font-family:monospace; margin-top:4px; }
+
+.btn {
+  width:100%; padding:16px; border:none; border-radius:14px;
+  font-family:'DM Sans',sans-serif; font-size:0.95rem; font-weight:600;
+  cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-primary { background:linear-gradient(135deg,var(--accent),#00c488); color:var(--bg); box-shadow:0 4px 24px rgba(0,229,160,0.25); }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 30px rgba(0,229,160,0.35); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.btn-secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
+.btn-row { display:flex; gap:10px; margin-top:12px; }
+.btn-row .btn { flex:1; }
+
+.history-item { display:flex; justify-content:space-between; align-items:center; padding:14px; background:var(--bg2); border-radius:12px; margin-bottom:8px; }
+.history-dist { font-family:'Instrument Serif',serif; font-size:1.5rem; color:var(--accent2); }
+.history-time { font-size:0.7rem; color:var(--text2); }
+.history-delete { background:none; border:none; color:var(--text2); cursor:pointer; font-size:1.1rem; padding:4px; }
+
+.location-info { margin-top:12px; padding:12px; background:var(--bg2); border-radius:12px; font-size:0.75rem; color:var(--text2); text-align:center; }
+
+.gps-accuracy { display:flex; align-items:center; gap:6px; font-size:0.7rem; padding:6px 12px; background:var(--bg2); border-radius:20px; margin:10px auto; width:fit-content; }
+.gps-dot { width:8px; height:8px; border-radius:50%; animation:pulse 2s infinite; }
+.gps-good { background:var(--accent); } .gps-ok { background:var(--gold); } .gps-poor { background:var(--warn); }
+
+.loading-dots::after { content:''; animation:dots 1.5s infinite; }
+@keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+
+.forecast-loading { text-align:center; padding:60px 20px; }
+.forecast-loading .spinner {
+  width:48px; height:48px; border:3px solid var(--card2);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin 1s linear infinite; margin:0 auto 16px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.forecast-loading p { color:var(--text2); font-size:0.85rem; }
+
+@media(max-width:360px) {
+  .score-ring { width:150px; height:150px; }
+  .score-value .number { font-size:2.8rem; }
+  .dist-big { font-size:3rem; }
+}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="app">
+  <div class="header">
+    <h1>🎣 PescApp</h1>
+    <div class="subtitle">Tu compañero de pesca</div>
+    <div class="location-badge" id="locationBadge" style="display:none">
+      <div class="loc-dot"></div>
+      <span id="locationText">Ubicando...</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('forecast')"><span class="tab-icon">🌙</span>Pronóstico</button>
+    <button class="tab" onclick="switchTab('distance')"><span class="tab-icon">📏</span>Distancia</button>
+    <button class="tab" onclick="switchTab('tips')"><span class="tab-icon">💡</span>Tips</button>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="section active" id="sec-forecast">
+    <div id="forecastLoading" class="forecast-loading">
+      <div class="spinner"></div>
+      <p>Obteniendo tu ubicación y clima<span class="loading-dots"></span></p>
+    </div>
+    <div id="forecastContent" style="display:none">
+      <div class="card bite-score">
+        <div class="score-ring">
+          <svg viewBox="0 0 200 200">
+            <circle class="bg-circle" cx="100" cy="100" r="85"/>
+            <circle class="score-circle" id="scoreCircle" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534"/>
+          </svg>
+          <div class="score-value">
+            <div class="number" id="scoreNum">--</div>
+            <div class="label">Pique</div>
+          </div>
+        </div>
+        <div class="score-status" id="scoreStatus"></div>
+        <div class="score-desc" id="scoreDesc"></div>
+        <div class="weather-banner" id="weatherBanner"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🕐 Actividad por hora — mañana</div>
+        <div class="hours-bar" id="hoursBar"></div>
+        <div class="hours-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Factores de pique</div>
+        <div class="factors" id="factorsGrid"></div>
+      </div>
+
+      <div class="card" id="pressureCard" style="display:none">
+        <div class="card-title">📈 Presión atmosférica — mañana</div>
+        <div class="pressure-chart"><canvas id="pressureCanvas"></canvas></div>
+        <div class="pressure-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span></div>
+        <div id="pressureTrend" style="text-align:center;margin-top:8px;font-size:0.8rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISTANCE -->
+  <div class="section" id="sec-distance">
+    <div class="card">
+      <div class="card-title">📏 Medidor de lance</div>
+      <div class="distance-display">
+        <div class="dist-big" id="distValue">0</div>
+        <div class="dist-unit">metros</div>
+        <div class="dist-secondary" id="distSecondary"></div>
+      </div>
+      <div class="gps-accuracy" id="gpsStatus" style="display:none">
+        <div class="gps-dot" id="gpsDot"></div>
+        <span id="gpsText">GPS conectando...</span>
+      </div>
+      <div class="measure-steps">
+        <div class="measure-step current" id="step1">
+          <div class="step-num">1</div>
+          <div class="step-info">
+            <div class="step-title">Marcá la costa</div>
+            <div class="step-desc">Pararte donde estás y tocar el botón</div>
+            <div class="step-coord" id="coord1"></div>
+          </div>
+        </div>
+        <div class="measure-step" id="step2">
+          <div class="step-num">2</div>
+          <div class="step-info">
+            <div class="step-title">Marcá el lance</div>
+            <div class="step-desc">Caminá hasta donde cayó la línea y marcá</div>
+            <div class="step-coord" id="coord2"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnMeasure" onclick="handleMeasure()">📍 Marcar posición en la costa</button>
+      <div class="btn-row" id="btnRow2" style="display:none">
+        <button class="btn btn-secondary" onclick="resetMeasure()">🔄 Reiniciar</button>
+        <button class="btn btn-primary" style="font-size:0.85rem" onclick="saveMeasure()">💾 Guardar</button>
+      </div>
+      <div class="location-info" id="locationTip">
+        💡 <strong>Tip:</strong> Marcá tu posición en la costa, después caminá o navegá hasta donde cayó la línea y marcá el segundo punto.
+      </div>
+    </div>
+    <div class="card" id="historyCard" style="display:none">
+      <div class="card-title">📋 Mediciones guardadas</div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="section" id="sec-tips">
+    <div class="card">
+      <div class="card-title">🧠 Cuándo conviene pescar</div>
+      <div class="tips-list">
+        <div class="tip"><div class="tip-icon">🌙</div><div class="tip-text"><strong>Luna nueva y llena</strong> = más actividad. Los 3 días antes son los mejores.</div></div>
+        <div class="tip"><div class="tip-icon">📉</div><div class="tip-text"><strong>Presión bajando</strong> (antes de tormenta) genera frenesí. 2-4 hs antes del frente = pique violento.</div></div>
+        <div class="tip"><div class="tip-icon">🌅</div><div class="tip-text"><strong>Amanecer y atardecer</strong> son los horarios más consistentes.</div></div>
+        <div class="tip"><div class="tip-icon">💨</div><div class="tip-text"><strong>Viento del oeste</strong> = buen pique. Viento del este = lento. Brisa suave > calma total.</div></div>
+        <div class="tip"><div class="tip-icon">🌡️</div><div class="tip-text"><strong>Presión estable alta</strong> (>1015 hPa) con brisa = excelente para pescar.</div></div>
+        <div class="tip"><div class="tip-icon">☁️</div><div class="tip-text"><strong>Nublado</strong> = pique todo el día. Despejado = peces profundos, pescá temprano o tarde.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Tips para el lance</div>
+      <div class="tips-list">
+        <div class="tip"><div class="tip-icon">📏</div><div class="tip-text"><strong>Medí tus lances.</strong> Saber la distancia te ayuda a repetir el punto donde pican.</div></div>
+        <div class="tip"><div class="tip-icon">🧵</div><div class="tip-text"><strong>Marcá la línea.</strong> Ponele un nudo o cinta a la distancia que funciona.</div></div>
+        <div class="tip"><div class="tip-icon">🗺️</div><div class="tip-text"><strong>Guardá mediciones</strong> para la próxima tirar al mismo punto.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =================== GLOBALS ===================
+let userLat=null,userLng=null,weatherData=null;
+
+// =================== TABS ===================
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['forecast','distance','tips'][i]===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+}
+
+// =================== MOON ===================
+function getMoonPhase(date){
+  const knownNew=new Date(2024,0,11,11,57);
+  const syn=29.53058867;
+  const diff=(date.getTime()-knownNew.getTime())/(1000*60*60*24);
+  const phase=((diff%syn)+syn)%syn;
+  const pct=phase/syn;
+  let name,icon,quality;
+  if(pct<0.0625||pct>=0.9375){name='Luna Nueva';icon='🌑';quality=95;}
+  else if(pct<0.1875){name='Creciente';icon='🌒';quality=60;}
+  else if(pct<0.3125){name='Cuarto Creciente';icon='🌓';quality=50;}
+  else if(pct<0.4375){name='Gibosa Creciente';icon='🌔';quality=70;}
+  else if(pct<0.5625){name='Luna Llena';icon='🌕';quality=90;}
+  else if(pct<0.6875){name='Gibosa Menguante';icon='🌖';quality=70;}
+  else if(pct<0.8125){name='Cuarto Menguante';icon='🌗';quality=50;}
+  else{name='Menguante';icon='🌘';quality=60;}
+  return {name,icon,quality,phase:pct,dayInCycle:phase};
+}
+
+// =================== WIND ===================
+function windDirName(deg){
+  const d=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  return d[Math.round(deg/22.5)%16];
+}
+function windQuality(deg){
+  if(deg>=225&&deg<=315) return {q:'great',t:'Ideal (oeste)'};
+  if((deg>=180&&deg<225)||(deg>315&&deg<=360)) return {q:'good',t:'Bueno'};
+  if((deg>=135&&deg<180)||(deg>0&&deg<=45)) return {q:'fair',t:'Regular'};
+  return {q:'poor',t:'Desfavorable (este)'};
+}
+
+// =================== PRESSURE ===================
+function analyzePressure(hp){
+  if(!hp||hp.length<12) return {trend:'stable',quality:'good',text:'Estable',score:70};
+  const f6=hp.slice(0,6).reduce((a,b)=>a+b,0)/6;
+  const l6=hp.slice(-6).reduce((a,b)=>a+b,0)/6;
+  const diff=l6-f6;
+  const avg=hp.reduce((a,b)=>a+b,0)/hp.length;
+  if(diff<-2) return {trend:'falling_fast',quality:'great',text:'Bajando rápido — ¡frenesí!',score:95};
+  if(diff<-0.5) return {trend:'falling',quality:'great',text:'Bajando — peces activos',score:85};
+  if(diff>2) return {trend:'rising_fast',quality:'good',text:'Subiendo rápido — buen post-tormenta',score:80};
+  if(diff>0.5) return {trend:'rising',quality:'good',text:'Subiendo — mejorando',score:75};
+  if(avg>1015) return {trend:'stable_high',quality:'good',text:'Estable alta — buenas condiciones',score:72};
+  if(avg<1008) return {trend:'stable_low',quality:'poor',text:'Estable baja — pique lento',score:35};
+  return {trend:'stable',quality:'fair',text:'Estable',score:60};
+}
+
+// =================== CLOUD ===================
+function cloudQuality(c){
+  if(c>=70) return {q:'great',t:'Nublado — ideal',s:90};
+  if(c>=40) return {q:'good',t:'Parcial — bueno',s:75};
+  if(c>=20) return {q:'fair',t:'Poco nublado',s:60};
+  return {q:'fair',t:'Despejado — UV alto',s:50};
+}
+
+// =================== BITE SCORE ===================
+function calculateBiteScore(date,w){
+  const moon=getMoonPhase(date);
+  let score=0;
+  const wt={moon:25,pressure:25,wind:15,cloud:10,season:10,prox:15};
+  score+=moon.quality*(wt.moon/100);
+  const pA=w?analyzePressure(w.hourlyPressure):{score:60};
+  score+=pA.score*(wt.pressure/100);
+  if(w&&w.windDir!==undefined){
+    const wq=windQuality(w.windDir);
+    const wsS=w.windSpeed<=15?80:w.windSpeed<=25?60:30;
+    const wdS=wq.q==='great'?95:wq.q==='good'?75:wq.q==='fair'?55:35;
+    score+=((wdS+wsS)/2)*(wt.wind/100);
+  } else score+=60*(wt.wind/100);
+  if(w&&w.cloud!==undefined) score+=cloudQuality(w.cloud).s*(wt.cloud/100);
+  else score+=60*(wt.cloud/100);
+  const month=date.getMonth();
+  const ss=[65,60,70,80,75,50,45,50,65,75,80,70];
+  score+=ss[month]*(wt.season/100);
+  const dtM=Math.min(moon.dayInCycle,29.53-moon.dayInCycle,Math.abs(moon.dayInCycle-14.76));
+  score+=Math.max(0,100-dtM*15)*(wt.prox/100);
+  return Math.round(Math.min(100,Math.max(10,score)));
+}
+
+// =================== SOLUNAR HOURS ===================
+function getSolunarHours(date,sunrise,sunset){
+  const sr=sunrise||7,sst=sunset||18.5;
+  const moon=getMoonPhase(date);
+  const h=new Array(24).fill(0);
+  for(let i=Math.floor(sr)-1;i<=Math.ceil(sr)+1;i++) if(i>=0&&i<24) h[i]+=35;
+  for(let i=Math.floor(sst)-1;i<=Math.ceil(sst)+1;i++) if(i>=0&&i<24) h[i]+=35;
+  const mr=Math.floor((moon.phase*24+6)%24),ms=(mr+12)%24;
+  for(let d=-1;d<=1;d++){h[(mr+d+24)%24]+=25;h[(ms+d+24)%24]+=25;}
+  h[(mr+6)%24]+=15;h[(ms+6)%24]+=15;
+  if(moon.quality>=90) h.forEach((v,i)=>h[i]=Math.min(100,v*1.2));
+  for(let i=1;i<=4;i++) h[i]*=(moon.quality>=85)?0.7:0.3;
+  const mx=Math.max(...h);
+  return h.map(v=>Math.round(v/mx*100));
+}
+
+// =================== FETCH WEATHER (Open-Meteo) ===================
+async function fetchWeather(lat,lng){
+  try{
+    const tom=new Date();tom.setDate(tom.getDate()+1);
+    const ds=tom.toISOString().split('T')[0];
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`+
+      `&hourly=temperature_2m,surface_pressure,windspeed_10m,winddirection_10m,cloudcover,uv_index`+
+      `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,windspeed_10m_max,winddirection_10m_dominant,precipitation_probability_max,uv_index_max`+
+      `&start_date=${ds}&end_date=${ds}&timezone=auto`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(!data.daily||!data.hourly) throw new Error('Bad data');
+    const d=data.daily,hr=data.hourly;
+    const srP=d.sunrise[0].split('T')[1].split(':');
+    const ssP=d.sunset[0].split('T')[1].split(':');
+    return {
+      tempMax:d.temperature_2m_max[0], tempMin:d.temperature_2m_min[0],
+      windSpeed:d.windspeed_10m_max[0], windDir:d.winddirection_10m_dominant[0],
+      precipProb:d.precipitation_probability_max[0], uvMax:d.uv_index_max[0],
+      sunrise:parseInt(srP[0])+parseInt(srP[1])/60,
+      sunriseStr:d.sunrise[0].split('T')[1].substring(0,5),
+      sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,
+      sunsetStr:d.sunset[0].split('T')[1].substring(0,5),
+      cloud:hr.cloudcover?hr.cloudcover.reduce((a,b)=>a+b,0)/hr.cloudcover.length:50,
+      hourlyPressure:hr.surface_pressure||[],
+      hourlyTemp:hr.temperature_2m||[],
+      hourlyWind:hr.windspeed_10m||[],
+      hourlyCloud:hr.cloudcover||[],
+      hourlyUV:hr.uv_index||[]
+    };
+  }catch(e){console.error('Weather error:',e);return null;}
+}
+
+// =================== REVERSE GEOCODE ===================
+async function reverseGeocode(lat,lng){
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=es`);
+    const d=await r.json();
+    if(d.address){
+      return d.address.city||d.address.town||d.address.village||d.address.county||d.address.state||`${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+    }
+    return `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+  }catch(e){return `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;}
+}
+
+// =================== DRAW PRESSURE CHART ===================
+function drawPressureChart(hp){
+  const canvas=document.getElementById('pressureCanvas');
+  if(!canvas||!hp||hp.length===0)return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const w=rect.width,h=rect.height;
+  const mn=Math.min(...hp)-1,mx=Math.max(...hp)+1,rng=mx-mn||1;
+  const grd=ctx.createLinearGradient(0,0,0,h);
+  grd.addColorStop(0,'rgba(0,201,255,0.2)');grd.addColorStop(1,'rgba(0,201,255,0)');
+  ctx.beginPath();ctx.moveTo(0,h);
+  hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;ctx.lineTo(x,y);});
+  ctx.lineTo(w,h);ctx.closePath();ctx.fillStyle=grd;ctx.fill();
+  ctx.beginPath();
+  hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='#00c9ff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#8899b4';ctx.font='10px DM Sans';
+  ctx.fillText(Math.round(mx)+' hPa',4,12);
+  ctx.fillText(Math.round(mn)+' hPa',4,h-2);
+}
+
+// =================== RENDER FORECAST ===================
+function renderForecast(w){
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  const moon=getMoonPhase(tom);
+  const score=calculateBiteScore(tom,w);
+  const hours=getSolunarHours(tom,w?.sunrise,w?.sunset);
+  
+  document.getElementById('forecastLoading').style.display='none';
+  document.getElementById('forecastContent').style.display='block';
+  
+  const circle=document.getElementById('scoreCircle');
+  const circ=2*Math.PI*85;
+  const off=circ-(score/100)*circ;
+  const sc=score>=75?'var(--accent)':score>=55?'var(--gold)':score>=35?'var(--warn)':'#ff4444';
+  setTimeout(()=>{circle.style.strokeDashoffset=off;circle.style.stroke=sc;},300);
+  document.getElementById('scoreNum').textContent=score;
+  
+  let st,ds;
+  if(score>=80){st='🔥 ¡Pique excelente!';ds='Condiciones ideales. Salí a pescar sin dudar.';}
+  else if(score>=65){st='✅ Buen pique esperado';ds='Buenas chances. Concentrate en amanecer y atardecer.';}
+  else if(score>=45){st='⚖️ Pique moderado';ds='Condiciones regulares. Aprovechá las mejores horas.';}
+  else{st='😴 Pique flojo';ds='Día complicado. Mucha paciencia y buenos horarios.';}
+  document.getElementById('scoreStatus').textContent=st;
+  document.getElementById('scoreDesc').textContent=ds;
+  
+  if(w){
+    document.getElementById('weatherBanner').innerHTML=`
+      <div class="wb-item"><div class="wb-val">${Math.round(w.tempMin)}°/${Math.round(w.tempMax)}°</div><div class="wb-lbl">Temp</div></div>
+      <div class="wb-item"><div class="wb-val">${Math.round(w.windSpeed)} km/h</div><div class="wb-lbl">Viento ${windDirName(w.windDir)}</div></div>
+      <div class="wb-item"><div class="wb-val">${w.precipProb}%</div><div class="wb-lbl">Prob. lluvia</div></div>`;
+  }
+  
+  const hBar=document.getElementById('hoursBar');hBar.innerHTML='';
+  hours.forEach((val,h)=>{
+    const col=document.createElement('div');col.className='hour-col';
+    const c=val>=75?'var(--accent)':val>=50?'var(--gold)':val>=25?'var(--warn)':'var(--card2)';
+    col.style.height=Math.max(8,val*0.4)+'px';col.style.background=c;
+    col.setAttribute('data-label',`${h}:00 — ${val}%`);hBar.appendChild(col);
+  });
+  
+  const pA=w?analyzePressure(w.hourlyPressure):null;
+  const wq=w?windQuality(w.windDir):null;
+  const cq=w?cloudQuality(w.cloud):null;
+  
+  const factors=[
+    {icon:moon.icon,label:'Fase Lunar',value:moon.name,
+     quality:moon.quality>=80?'great':moon.quality>=60?'good':moon.quality>=40?'fair':'poor',
+     qualityText:moon.quality>=80?'Ideal':moon.quality>=60?'Bueno':moon.quality>=40?'Regular':'Flojo'},
+    {icon:'📊',label:'Presión',value:pA?pA.text.split('—')[0].trim():'Sin datos',
+     sub:w?`${Math.round(w.hourlyPressure[0]||0)} hPa`:'',
+     quality:pA?pA.quality:'fair',
+     qualityText:pA?(pA.score>=80?'Excelente':pA.score>=60?'Bueno':'Regular'):'?'},
+    {icon:'💨',label:'Viento',value:w?`${windDirName(w.windDir)} ${Math.round(w.windSpeed)}km/h`:'Sin datos',
+     quality:wq?wq.q:'fair',qualityText:wq?wq.t:'?'},
+    {icon:'☁️',label:'Nubosidad',value:w?`${Math.round(w.cloud)}%`:'Sin datos',
+     quality:cq?cq.q:'fair',qualityText:cq?cq.t.split('—')[0].trim():'?'},
+    {icon:'🌅',label:'Amanecer',value:w?w.sunriseStr:'~7:10',quality:'great',qualityText:'Hora pico'},
+    {icon:'🌇',label:'Atardecer',value:w?w.sunsetStr:'~18:30',quality:'great',qualityText:'Hora pico'}
+  ];
+  
+  document.getElementById('factorsGrid').innerHTML=factors.map(f=>`
+    <div class="factor">
+      <div class="factor-icon">${f.icon}</div>
+      <div class="factor-label">${f.label}</div>
+      <div class="factor-value">${f.value}</div>
+      ${f.sub?`<div class="factor-sub">${f.sub}</div>`:''}
+      <div class="factor-quality quality-${f.quality}">${f.qualityText}</div>
+    </div>`).join('');
+  
+  if(w&&w.hourlyPressure.length>0){
+    document.getElementById('pressureCard').style.display='block';
+    setTimeout(()=>drawPressureChart(w.hourlyPressure),100);
+    const tc={falling_fast:'var(--accent)',falling:'var(--accent)',rising_fast:'var(--gold)',rising:'var(--gold)',stable_high:'var(--accent2)',stable_low:'var(--warn)',stable:'var(--text2)'};
+    document.getElementById('pressureTrend').innerHTML=`<span style="color:${tc[pA.trend]||'var(--text2)'}">${pA.text}</span>`;
+  }
+}
+
+// =================== INIT FORECAST ===================
+async function initForecast(){
+  document.getElementById('locationBadge').style.display='inline-flex';
+  try{
+    const pos=await new Promise((res,rej)=>{
+      navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:300000});
+    });
+    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+    const locName=await reverseGeocode(userLat,userLng);
+    document.getElementById('locationText').textContent=locName;
+    weatherData=await fetchWeather(userLat,userLng);
+    renderForecast(weatherData);
+  }catch(e){
+    console.warn('GPS failed, default VCP',e);
+    userLat=-31.42;userLng=-64.5;
+    document.getElementById('locationText').textContent='Villa Carlos Paz (default)';
+    weatherData=await fetchWeather(userLat,userLng);
+    renderForecast(weatherData);
+  }
+}
+
+// =================== DISTANCE ===================
+let point1=null,point2=null,watchId=null,currentAccuracy=null;
+let measurements=[];
+try{measurements=JSON.parse(localStorage.getItem('pescapp_measures')||'[]');}catch(e){measurements=[];}
+
+function handleMeasure(){if(!point1)markPoint1();else if(!point2)markPoint2();}
+function markPoint1(){
+  const btn=document.getElementById('btnMeasure');
+  btn.disabled=true;btn.innerHTML='📡 Obteniendo GPS<span class="loading-dots"></span>';
+  document.getElementById('gpsStatus').style.display='flex';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    point1={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:pos.coords.accuracy};
+    updateGPSIndicator(pos.coords.accuracy);
+    document.getElementById('coord1').textContent=`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} (±${Math.round(pos.coords.accuracy)}m)`;
+    document.getElementById('step1').className='measure-step completed';
+    document.getElementById('step2').className='measure-step current';
+    btn.disabled=false;btn.innerHTML='📍 Marcar punto del lance';
+    startWatching();
+  },()=>{
+    btn.disabled=false;btn.innerHTML='📍 Marcar posición en la costa';
+    alert('No se pudo obtener la ubicación. Activá el GPS.');
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+function markPoint2(){
+  const btn=document.getElementById('btnMeasure');
+  btn.disabled=true;btn.innerHTML='📡 Obteniendo GPS<span class="loading-dots"></span>';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    point2={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:pos.coords.accuracy};
+    updateGPSIndicator(pos.coords.accuracy);
+    document.getElementById('coord2').textContent=`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} (±${Math.round(pos.coords.accuracy)}m)`;
+    document.getElementById('step2').className='measure-step completed';
+    const dist=haversineDistance(point1.lat,point1.lng,point2.lat,point2.lng);
+    document.getElementById('distValue').textContent=Math.round(dist);
+    document.getElementById('distSecondary').textContent=`Precisión: ±${Math.round(point1.acc+point2.acc)}m · ${new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+    btn.style.display='none';
+    document.getElementById('btnRow2').style.display='flex';
+    document.getElementById('locationTip').innerHTML=`🎯 <strong>${Math.round(dist)} metros</strong> desde la costa hasta el lance.`;
+    stopWatching();
+  },()=>{
+    btn.disabled=false;btn.innerHTML='📍 Marcar punto del lance';
+    alert('Error GPS. Intentá de nuevo.');
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+
+function haversineDistance(lat1,lon1,lat2,lon2){
+  const R=6371000,dL=(lat2-lat1)*Math.PI/180,dN=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function startWatching(){if(watchId)return;watchId=navigator.geolocation.watchPosition(p=>updateGPSIndicator(p.coords.accuracy),()=>{},{enableHighAccuracy:true});}
+function stopWatching(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}}
+function updateGPSIndicator(acc){
+  const d=document.getElementById('gpsDot'),t=document.getElementById('gpsText');
+  if(acc<=5){d.className='gps-dot gps-good';t.textContent=`GPS excelente (±${Math.round(acc)}m)`;}
+  else if(acc<=15){d.className='gps-dot gps-good';t.textContent=`GPS bueno (±${Math.round(acc)}m)`;}
+  else if(acc<=30){d.className='gps-dot gps-ok';t.textContent=`GPS aceptable (±${Math.round(acc)}m)`;}
+  else{d.className='gps-dot gps-poor';t.textContent=`GPS bajo (±${Math.round(acc)}m) · Esperá...`;}
+}
+function resetMeasure(){
+  point1=null;point2=null;stopWatching();
+  document.getElementById('distValue').textContent='0';
+  document.getElementById('distSecondary').textContent='';
+  document.getElementById('coord1').textContent='';
+  document.getElementById('coord2').textContent='';
+  document.getElementById('step1').className='measure-step current';
+  document.getElementById('step2').className='measure-step';
+  const btn=document.getElementById('btnMeasure');btn.style.display='flex';btn.disabled=false;btn.innerHTML='📍 Marcar posición en la costa';
+  document.getElementById('btnRow2').style.display='none';
+  document.getElementById('gpsStatus').style.display='none';
+  document.getElementById('locationTip').innerHTML='💡 <strong>Tip:</strong> Marcá tu posición en la costa, después caminá hasta donde cayó la línea y marcá el segundo punto.';
+}
+function saveMeasure(){
+  if(!point1||!point2)return;
+  const dist=haversineDistance(point1.lat,point1.lng,point2.lat,point2.lng);
+  measurements.unshift({distance:Math.round(dist),time:new Date().toISOString(),p1:{lat:point1.lat,lng:point1.lng},p2:{lat:point2.lat,lng:point2.lng}});
+  try{localStorage.setItem('pescapp_measures',JSON.stringify(measurements));}catch(e){}
+  renderHistory();resetMeasure();
+}
+function renderHistory(){
+  const card=document.getElementById('historyCard'),list=document.getElementById('historyList');
+  if(measurements.length===0){card.style.display='none';return;}
+  card.style.display='block';
+  list.innerHTML=measurements.map((m,i)=>{
+    const d=new Date(m.time);
+    const ts=d.toLocaleDateString('es-AR',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="history-item"><div><div class="history-dist">${m.distance}m</div><div class="history-time">${ts}</div></div><button class="history-delete" onclick="deleteMeasure(${i})">✕</button></div>`;
+  }).join('');
+}
+function deleteMeasure(i){measurements.splice(i,1);try{localStorage.setItem('pescapp_measures',JSON.stringify(measurements));}catch(e){}renderHistory();}
+
+// =================== BOOT ===================
+renderHistory();
+initForecast();
+</script>
+</body>
+</html>
