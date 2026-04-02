@@ -187,6 +187,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <p>Obteniendo tu ubicación y clima<span class="loading-dots"></span></p>
     </div>
     <div id="forecastContent" style="display:none">
+      <!-- Day toggle -->
+      <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--card);border-radius:12px;padding:3px;">
+        <button class="tab active" id="dayTabToday" onclick="showDay('today')" style="flex:1;padding:10px;font-size:0.85rem;">📅 Hoy</button>
+        <button class="tab" id="dayTabTomorrow" onclick="showDay('tomorrow')" style="flex:1;padding:10px;font-size:0.85rem;">📅 Mañana</button>
+      </div>
+      <!-- Rain alert -->
+      <div id="rainAlert" style="display:none;padding:12px 16px;background:rgba(255,107,74,0.12);border:1px solid rgba(255,107,74,0.25);border-radius:14px;margin-bottom:14px;text-align:center;font-size:0.85rem;"></div>
       <div class="card bite-score">
         <div class="score-ring">
           <svg viewBox="0 0 200 200">
@@ -203,7 +210,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="weather-banner" id="weatherBanner"></div>
       </div>
       <div class="card">
-        <div class="card-title">🕐 Actividad por hora — mañana</div>
+        <div class="card-title" id="hoursTitle">🕐 Actividad por hora</div>
         <div class="hours-bar" id="hoursBar"></div>
         <div class="hours-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span></div>
       </div>
@@ -212,7 +219,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="factors" id="factorsGrid"></div>
       </div>
       <div class="card" id="pressureCard" style="display:none">
-        <div class="card-title">📈 Presión atmosférica — mañana</div>
+        <div class="card-title" id="pressureTitle">📈 Presión atmosférica (nivel del mar)</div>
         <div class="pressure-chart"><canvas id="pressureCanvas"></canvas></div>
         <div class="pressure-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span></div>
         <div id="pressureTrend" style="text-align:center;margin-top:8px;font-size:0.8rem;"></div>
@@ -649,17 +656,42 @@ function windDirName(d){const n=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','
 function windQuality(d){if(d>=225&&d<=315)return{q:'great',t:'Ideal (oeste)'};if((d>=180&&d<225)||(d>315&&d<=360))return{q:'good',t:'Bueno'};if((d>=135&&d<180)||(d>0&&d<=45))return{q:'fair',t:'Regular'};return{q:'poor',t:'Desfavorable (este)'};}
 function analyzePressure(hp){if(!hp||hp.length<12)return{trend:'stable',quality:'good',text:'Estable',score:70};const f6=hp.slice(0,6).reduce((a,b)=>a+b,0)/6;const l6=hp.slice(-6).reduce((a,b)=>a+b,0)/6;const diff=l6-f6;const avg=hp.reduce((a,b)=>a+b,0)/hp.length;if(diff<-2)return{trend:'falling_fast',quality:'great',text:'Bajando rápido — ¡frenesí!',score:95};if(diff<-0.5)return{trend:'falling',quality:'great',text:'Bajando — peces activos',score:85};if(diff>2)return{trend:'rising_fast',quality:'good',text:'Subiendo rápido',score:80};if(diff>0.5)return{trend:'rising',quality:'good',text:'Subiendo — mejorando',score:75};if(avg>1015)return{trend:'stable_high',quality:'good',text:'Estable alta — buenas',score:72};if(avg<1008)return{trend:'stable_low',quality:'poor',text:'Estable baja — lento',score:35};return{trend:'stable',quality:'fair',text:'Estable',score:60};}
 function cloudQuality(c){if(c>=70)return{q:'great',t:'Nublado — ideal',s:90};if(c>=40)return{q:'good',t:'Parcial',s:75};if(c>=20)return{q:'fair',t:'Poco nublado',s:60};return{q:'fair',t:'Despejado',s:50};}
+function rainPenalty(precipProb,precipMM){
+  // Heavy rain = terrible fishing, light drizzle can be ok
+  if(precipMM>=10||precipProb>=80) return{q:'poor',t:'Lluvia fuerte — no pescar',s:10};
+  if(precipMM>=5||precipProb>=60) return{q:'poor',t:'Lluvia — difícil',s:25};
+  if(precipMM>=2||precipProb>=40) return{q:'fair',t:'Lluvia leve — posible',s:50};
+  if(precipProb>=20) return{q:'good',t:'Algo de lluvia',s:65};
+  return{q:'great',t:'Sin lluvia',s:90};
+}
+function weatherCodeDesc(code){
+  if(code<=1) return '☀️ Despejado';
+  if(code<=3) return '⛅ Parcial';
+  if(code<=48) return '🌫️ Niebla';
+  if(code<=57) return '🌧️ Llovizna';
+  if(code<=67) return '🌧️ Lluvia';
+  if(code<=77) return '🌨️ Nieve';
+  if(code<=82) return '🌧️ Chaparrones';
+  if(code<=86) return '🌨️ Nieve fuerte';
+  return '⛈️ Tormenta';
+}
 
 function calculateBiteScore(date,w){
   const moon=getMoonPhase(date);let score=0;
-  score+=moon.quality*0.25;
-  const pA=w?analyzePressure(w.hourlyPressure):{score:60};score+=pA.score*0.25;
-  if(w&&w.windDir!==undefined){const wq=windQuality(w.windDir);const ws=w.windSpeed<=15?80:w.windSpeed<=25?60:30;const wd=wq.q==='great'?95:wq.q==='good'?75:wq.q==='fair'?55:35;score+=((wd+ws)/2)*0.15;}else score+=60*0.15;
-  if(w&&w.cloud!==undefined)score+=cloudQuality(w.cloud).s*0.10;else score+=60*0.10;
-  const ss=[65,60,70,80,75,50,45,50,65,75,80,70];score+=ss[date.getMonth()]*0.10;
+  // Weights: moon 20%, pressure 20%, wind 12%, cloud 8%, season 8%, proximity 12%, rain 20%
+  score+=moon.quality*0.20;
+  const pA=w?analyzePressure(w.hourlyPressure):{score:60};score+=pA.score*0.20;
+  if(w&&w.windDir!==undefined){const wq=windQuality(w.windDir);const ws=w.windSpeed<=15?80:w.windSpeed<=25?60:30;const wd=wq.q==='great'?95:wq.q==='good'?75:wq.q==='fair'?55:35;score+=((wd+ws)/2)*0.12;}else score+=60*0.12;
+  if(w&&w.cloud!==undefined)score+=cloudQuality(w.cloud).s*0.08;else score+=60*0.08;
+  const ss=[65,60,70,80,75,50,45,50,65,75,80,70];score+=ss[date.getMonth()]*0.08;
   const dtM=Math.min(moon.dayInCycle,29.53-moon.dayInCycle,Math.abs(moon.dayInCycle-14.76));
-  score+=Math.max(0,100-dtM*15)*0.15;
-  return Math.round(Math.min(100,Math.max(10,score)));
+  score+=Math.max(0,100-dtM*15)*0.12;
+  // RAIN penalty (20% weight) — this is the big one
+  if(w&&w.precipProb!==undefined){
+    const rp=rainPenalty(w.precipProb,w.precipMM||0);
+    score+=rp.s*0.20;
+  }else score+=70*0.20;
+  return Math.round(Math.min(100,Math.max(5,score)));
 }
 
 function getSolunarHours(date,sunrise,sunset){
@@ -677,11 +709,56 @@ function getSolunarHours(date,sunrise,sunset){
 
 // =================== FETCH WEATHER ===================
 async function fetchWeather(lat,lng){
-  try{const tom=new Date();tom.setDate(tom.getDate()+1);const ds=tom.toISOString().split('T')[0];
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,surface_pressure,windspeed_10m,winddirection_10m,cloudcover,uv_index&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,windspeed_10m_max,winddirection_10m_dominant,precipitation_probability_max,uv_index_max&start_date=${ds}&end_date=${ds}&timezone=auto`;
-  const res=await fetch(url);const data=await res.json();if(!data.daily||!data.hourly)throw 0;
-  const d=data.daily,hr=data.hourly;const srP=d.sunrise[0].split('T')[1].split(':'),ssP=d.sunset[0].split('T')[1].split(':');
-  return{tempMax:d.temperature_2m_max[0],tempMin:d.temperature_2m_min[0],windSpeed:d.windspeed_10m_max[0],windDir:d.winddirection_10m_dominant[0],precipProb:d.precipitation_probability_max[0],uvMax:d.uv_index_max[0],sunrise:parseInt(srP[0])+parseInt(srP[1])/60,sunriseStr:d.sunrise[0].split('T')[1].substring(0,5),sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,sunsetStr:d.sunset[0].split('T')[1].substring(0,5),cloud:hr.cloudcover?hr.cloudcover.reduce((a,b)=>a+b,0)/hr.cloudcover.length:50,hourlyPressure:hr.surface_pressure||[]};}catch(e){return null;}}
+  try{
+    const today=new Date();
+    const tom=new Date();tom.setDate(tom.getDate()+1);
+    const ds0=today.toISOString().split('T')[0];
+    const ds1=tom.toISOString().split('T')[0];
+    // Fetch TODAY and TOMORROW, use pressure_msl (sea level corrected)
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`+
+      `&hourly=temperature_2m,pressure_msl,windspeed_10m,winddirection_10m,cloudcover,uv_index,precipitation_probability,rain,weathercode`+
+      `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,windspeed_10m_max,winddirection_10m_dominant,precipitation_probability_max,precipitation_sum,uv_index_max,weathercode`+
+      `&start_date=${ds0}&end_date=${ds1}&timezone=auto`;
+    const res=await fetch(url);const data=await res.json();
+    if(!data.daily||!data.hourly)throw 0;
+    const d=data.daily,hr=data.hourly;
+    // Today = index 0, Tomorrow = index 1
+    // Hourly: first 24 = today, next 24 = tomorrow
+    const todayHourlyPressure=hr.pressure_msl?hr.pressure_msl.slice(0,24):[];
+    const tomorrowHourlyPressure=hr.pressure_msl?hr.pressure_msl.slice(24,48):[];
+    const todayHourlyRain=hr.precipitation_probability?hr.precipitation_probability.slice(0,24):[];
+    const tomorrowHourlyRain=hr.precipitation_probability?hr.precipitation_probability.slice(24,48):[];
+    const todayHourlyCloud=hr.cloudcover?hr.cloudcover.slice(0,24):[];
+    const tomorrowHourlyCloud=hr.cloudcover?hr.cloudcover.slice(24,48):[];
+    const todayHourlyWCode=hr.weathercode?hr.weathercode.slice(0,24):[];
+    const tomorrowHourlyWCode=hr.weathercode?hr.weathercode.slice(24,48):[];
+    
+    function parseDay(idx,hourlyP,hourlyR,hourlyC,hourlyWC){
+      const srP=d.sunrise[idx].split('T')[1].split(':'),ssP=d.sunset[idx].split('T')[1].split(':');
+      const avgCloud=hourlyC.length?hourlyC.reduce((a,b)=>a+b,0)/hourlyC.length:50;
+      return{
+        tempMax:d.temperature_2m_max[idx],tempMin:d.temperature_2m_min[idx],
+        windSpeed:d.windspeed_10m_max[idx],windDir:d.winddirection_10m_dominant[idx],
+        precipProb:d.precipitation_probability_max[idx],
+        precipMM:d.precipitation_sum[idx],
+        weatherCode:d.weathercode[idx],
+        uvMax:d.uv_index_max[idx],
+        sunrise:parseInt(srP[0])+parseInt(srP[1])/60,
+        sunriseStr:d.sunrise[idx].split('T')[1].substring(0,5),
+        sunset:parseInt(ssP[0])+parseInt(ssP[1])/60,
+        sunsetStr:d.sunset[idx].split('T')[1].substring(0,5),
+        cloud:avgCloud,
+        hourlyPressure:hourlyP,
+        hourlyRainProb:hourlyR,
+        hourlyWCode:hourlyWC
+      };
+    }
+    return {
+      today: parseDay(0,todayHourlyPressure,todayHourlyRain,todayHourlyCloud,todayHourlyWCode),
+      tomorrow: parseDay(1,tomorrowHourlyPressure,tomorrowHourlyRain,tomorrowHourlyCloud,tomorrowHourlyWCode)
+    };
+  }catch(e){console.error('Weather error:',e);return null;}
+}
 
 async function reverseGeocode(lat,lng){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&accept-language=es`);const d=await r.json();if(d.address){const a=d.address;const loc=a.village||a.town||a.suburb||a.city_district||a.city||a.county||a.state||'';const region=a.state||a.county||'';return loc+(region&&region!==loc?`, ${region}`:'');}return`${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;}catch(e){return`${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;}}
 
@@ -689,41 +766,138 @@ async function reverseGeocode(lat,lng){try{const r=await fetch(`https://nominati
 function drawPressureChart(hp){const c=document.getElementById('pressureCanvas');if(!c||!hp||!hp.length)return;const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;const rect=c.getBoundingClientRect();c.width=rect.width*dpr;c.height=rect.height*dpr;ctx.scale(dpr,dpr);const w=rect.width,h=rect.height;const mn=Math.min(...hp)-1,mx=Math.max(...hp)+1,rng=mx-mn||1;const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,201,255,0.2)');g.addColorStop(1,'rgba(0,201,255,0)');ctx.beginPath();ctx.moveTo(0,h);hp.forEach((v,i)=>{ctx.lineTo((i/(hp.length-1))*w,h-((v-mn)/rng)*h*0.85-h*0.05);});ctx.lineTo(w,h);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.beginPath();hp.forEach((v,i)=>{const x=(i/(hp.length-1))*w,y=h-((v-mn)/rng)*h*0.85-h*0.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='#00c9ff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#8899b4';ctx.font='10px DM Sans';ctx.fillText(Math.round(mx)+' hPa',4,12);ctx.fillText(Math.round(mn)+' hPa',4,h-2);}
 
 // =================== RENDER FORECAST ===================
-function renderForecast(w){
-  const tom=new Date();tom.setDate(tom.getDate()+1);const moon=getMoonPhase(tom),score=calculateBiteScore(tom,w),hours=getSolunarHours(tom,w?.sunrise,w?.sunset);
-  document.getElementById('forecastLoading').style.display='none';document.getElementById('forecastContent').style.display='block';
-  const circle=document.getElementById('scoreCircle');const circ=2*Math.PI*85;const off=circ-(score/100)*circ;
+let currentDayView='today'; // 'today' or 'tomorrow'
+
+function showDay(day){
+  currentDayView=day;
+  document.getElementById('dayTabToday').classList.toggle('active',day==='today');
+  document.getElementById('dayTabTomorrow').classList.toggle('active',day==='tomorrow');
+  if(weatherData) renderForecastDay(day==='today'?weatherData.today:weatherData.tomorrow, day);
+}
+
+function renderForecast(wd){
+  document.getElementById('forecastLoading').style.display='none';
+  document.getElementById('forecastContent').style.display='block';
+  if(!wd) return;
+  // Default: show today
+  renderForecastDay(wd.today,'today');
+}
+
+function renderForecastDay(w,dayLabel){
+  const date=new Date();
+  if(dayLabel==='tomorrow') date.setDate(date.getDate()+1);
+  const moon=getMoonPhase(date);
+  const score=calculateBiteScore(date,w);
+  const hours=getSolunarHours(date,w?.sunrise,w?.sunset);
+  
+  // Score ring
+  const circle=document.getElementById('scoreCircle');
+  const circ=2*Math.PI*85;
+  const off=circ-(score/100)*circ;
   const sc=score>=75?'var(--accent)':score>=55?'var(--gold)':score>=35?'var(--warn)':'#ff4444';
-  setTimeout(()=>{circle.style.strokeDashoffset=off;circle.style.stroke=sc;},300);
+  circle.style.transition='none';circle.style.strokeDashoffset=circ;
+  setTimeout(()=>{circle.style.transition='stroke-dashoffset 1.5s ease, stroke 0.5s';circle.style.strokeDashoffset=off;circle.style.stroke=sc;},50);
   document.getElementById('scoreNum').textContent=score;
-  let st,ds;if(score>=80){st='🔥 ¡Pique excelente!';ds='Condiciones ideales. Salí a pescar sin dudar.';}else if(score>=65){st='✅ Buen pique esperado';ds='Buenas chances. Concentrate en amanecer y atardecer.';}else if(score>=45){st='⚖️ Pique moderado';ds='Condiciones regulares. Aprovechá las mejores horas.';}else{st='😴 Pique flojo';ds='Día complicado. Mucha paciencia.';}
-  document.getElementById('scoreStatus').textContent=st;document.getElementById('scoreDesc').textContent=ds;
-  if(w){document.getElementById('weatherBanner').innerHTML=`<div class="wb-item"><div class="wb-val">${Math.round(w.tempMin)}°/${Math.round(w.tempMax)}°</div><div class="wb-lbl">Temp</div></div><div class="wb-item"><div class="wb-val">${Math.round(w.windSpeed)} km/h</div><div class="wb-lbl">Viento ${windDirName(w.windDir)}</div></div><div class="wb-item"><div class="wb-val">${w.precipProb}%</div><div class="wb-lbl">Lluvia</div></div>`;}
+  
+  let st,ds;
+  if(score>=80){st='🔥 ¡Pique excelente!';ds='Condiciones ideales. Salí a pescar sin dudar.';}
+  else if(score>=65){st='✅ Buen pique esperado';ds='Buenas chances. Concentrate en amanecer y atardecer.';}
+  else if(score>=45){st='⚖️ Pique moderado';ds='Condiciones regulares. Aprovechá las mejores horas.';}
+  else if(score>=30){st='😴 Pique flojo';ds='Día complicado. Mucha paciencia.';}
+  else{st='🚫 No pescar';ds='Condiciones muy malas. Mejor quedarse en casa.';}
+  document.getElementById('scoreStatus').textContent=st;
+  document.getElementById('scoreDesc').textContent=ds;
+  
+  // Rain alert
+  const rainEl=document.getElementById('rainAlert');
+  if(w&&w.precipProb>=50){
+    const rp=rainPenalty(w.precipProb,w.precipMM||0);
+    const wcDesc=w.weatherCode!==undefined?weatherCodeDesc(w.weatherCode):'';
+    rainEl.style.display='block';
+    rainEl.innerHTML=`⚠️ <strong>${wcDesc} — ${w.precipProb}% prob. lluvia</strong> (${w.precipMM||0}mm)`;
+    if(w.precipProb>=70) rainEl.style.borderColor='rgba(255,60,60,0.4)';
+  }else{
+    rainEl.style.display='none';
+  }
+  
+  // Weather banner
+  if(w){
+    const wcDesc=w.weatherCode!==undefined?weatherCodeDesc(w.weatherCode):'';
+    document.getElementById('weatherBanner').innerHTML=`
+      <div class="wb-item"><div class="wb-val">${Math.round(w.tempMin)}°/${Math.round(w.tempMax)}°</div><div class="wb-lbl">Temp</div></div>
+      <div class="wb-item"><div class="wb-val">${Math.round(w.windSpeed)} km/h</div><div class="wb-lbl">Viento ${windDirName(w.windDir)}</div></div>
+      <div class="wb-item"><div class="wb-val">${wcDesc||w.precipProb+'%'}</div><div class="wb-lbl">${wcDesc?'Clima':'Lluvia'}</div></div>`;
+  }
+  
+  // Hours title
+  document.getElementById('hoursTitle').textContent=`🕐 Actividad por hora — ${dayLabel==='today'?'hoy':'mañana'}`;
+  
+  // Hours bar
   const hBar=document.getElementById('hoursBar');hBar.innerHTML='';
-  hours.forEach((val,h)=>{const col=document.createElement('div');col.className='hour-col';col.style.height=Math.max(8,val*0.4)+'px';col.style.background=val>=75?'var(--accent)':val>=50?'var(--gold)':val>=25?'var(--warn)':'var(--card2)';col.setAttribute('data-label',`${h}:00 — ${val}%`);hBar.appendChild(col);});
-  const pA=w?analyzePressure(w.hourlyPressure):null;const wq=w?windQuality(w.windDir):null;const cq=w?cloudQuality(w.cloud):null;
+  hours.forEach((val,h)=>{
+    const col=document.createElement('div');col.className='hour-col';
+    col.style.height=Math.max(8,val*0.4)+'px';
+    col.style.background=val>=75?'var(--accent)':val>=50?'var(--gold)':val>=25?'var(--warn)':'var(--card2)';
+    col.setAttribute('data-label',`${h}:00 — ${val}%`);
+    hBar.appendChild(col);
+  });
+  
+  // Factors
+  const pA=w?analyzePressure(w.hourlyPressure):null;
+  const wq=w?windQuality(w.windDir):null;
+  const cq=w?cloudQuality(w.cloud):null;
+  const rp=w?rainPenalty(w.precipProb,w.precipMM||0):null;
+  
   const factors=[
-    {icon:moon.icon,label:'Fase Lunar',value:moon.name,quality:moon.quality>=80?'great':moon.quality>=60?'good':moon.quality>=40?'fair':'poor',qualityText:moon.quality>=80?'Ideal':moon.quality>=60?'Bueno':moon.quality>=40?'Regular':'Flojo'},
-    {icon:'📊',label:'Presión',value:pA?pA.text.split('—')[0].trim():'?',sub:w?`${Math.round(w.hourlyPressure[0]||0)} hPa`:'',quality:pA?pA.quality:'fair',qualityText:pA?(pA.score>=80?'Excelente':pA.score>=60?'Bueno':'Regular'):'?'},
-    {icon:'💨',label:'Viento',value:w?`${windDirName(w.windDir)} ${Math.round(w.windSpeed)}km/h`:'?',quality:wq?wq.q:'fair',qualityText:wq?wq.t:'?'},
-    {icon:'☁️',label:'Nubosidad',value:w?`${Math.round(w.cloud)}%`:'?',quality:cq?cq.q:'fair',qualityText:cq?cq.t:'?'},
+    {icon:moon.icon,label:'Fase Lunar',value:moon.name,
+     quality:moon.quality>=80?'great':moon.quality>=60?'good':moon.quality>=40?'fair':'poor',
+     qualityText:moon.quality>=80?'Ideal':moon.quality>=60?'Bueno':moon.quality>=40?'Regular':'Flojo'},
+    {icon:'🌧️',label:'Lluvia',value:w?`${w.precipProb}% · ${w.precipMM||0}mm`:'?',
+     quality:rp?rp.q:'fair',qualityText:rp?rp.t:'?'},
+    {icon:'📊',label:'Presión (mar)',value:pA?pA.text.split('—')[0].trim():'?',
+     sub:w&&w.hourlyPressure[0]?`${Math.round(w.hourlyPressure[0])} hPa`:'',
+     quality:pA?pA.quality:'fair',qualityText:pA?(pA.score>=80?'Excelente':pA.score>=60?'Bueno':'Regular'):'?'},
+    {icon:'💨',label:'Viento',value:w?`${windDirName(w.windDir)} ${Math.round(w.windSpeed)}km/h`:'?',
+     quality:wq?wq.q:'fair',qualityText:wq?wq.t:'?'},
+    {icon:'☁️',label:'Nubosidad',value:w?`${Math.round(w.cloud)}%`:'?',
+     quality:cq?cq.q:'fair',qualityText:cq?cq.t:'?'},
     {icon:'🌅',label:'Amanecer',value:w?w.sunriseStr:'~7:10',quality:'great',qualityText:'Hora pico'},
     {icon:'🌇',label:'Atardecer',value:w?w.sunsetStr:'~18:30',quality:'great',qualityText:'Hora pico'}
   ];
-  document.getElementById('factorsGrid').innerHTML=factors.map(f=>`<div class="factor"><div class="factor-icon">${f.icon}</div><div class="factor-label">${f.label}</div><div class="factor-value">${f.value}</div>${f.sub?`<div class="factor-sub">${f.sub}</div>`:''}
-  <div class="factor-quality quality-${f.quality}">${f.qualityText}</div></div>`).join('');
-  if(w&&w.hourlyPressure.length>0){document.getElementById('pressureCard').style.display='block';setTimeout(()=>drawPressureChart(w.hourlyPressure),100);const tc={falling_fast:'var(--accent)',falling:'var(--accent)',rising_fast:'var(--gold)',rising:'var(--gold)',stable_high:'var(--accent2)',stable_low:'var(--warn)',stable:'var(--text2)'};document.getElementById('pressureTrend').innerHTML=`<span style="color:${tc[pA.trend]||'var(--text2)'}">${pA.text}</span>`;}
+  
+  document.getElementById('factorsGrid').innerHTML=factors.map(f=>`
+    <div class="factor"><div class="factor-icon">${f.icon}</div><div class="factor-label">${f.label}</div>
+    <div class="factor-value">${f.value}</div>${f.sub?`<div class="factor-sub">${f.sub}</div>`:''}
+    <div class="factor-quality quality-${f.quality}">${f.qualityText}</div></div>`).join('');
+  
+  // Pressure chart
+  if(w&&w.hourlyPressure&&w.hourlyPressure.length>0){
+    document.getElementById('pressureCard').style.display='block';
+    document.getElementById('pressureTitle').textContent=`📈 Presión — ${dayLabel==='today'?'hoy':'mañana'} (nivel del mar)`;
+    setTimeout(()=>drawPressureChart(w.hourlyPressure),100);
+    const tc={falling_fast:'var(--accent)',falling:'var(--accent)',rising_fast:'var(--gold)',rising:'var(--gold)',stable_high:'var(--accent2)',stable_low:'var(--warn)',stable:'var(--text2)'};
+    document.getElementById('pressureTrend').innerHTML=`<span style="color:${tc[pA.trend]||'var(--text2)'}">${pA.text}</span>`;
+  }else{
+    document.getElementById('pressureCard').style.display='none';
+  }
 }
 
 // =================== INIT ===================
 async function initForecast(){
   document.getElementById('locationBadge').style.display='inline-flex';
-  try{const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:300000}));
-  userLat=pos.coords.latitude;userLng=pos.coords.longitude;
-  const locName=await reverseGeocode(userLat,userLng);document.getElementById('locationText').textContent=locName;
-  weatherData=await fetchWeather(userLat,userLng);renderForecast(weatherData);
-  }catch(e){userLat=-31.42;userLng=-64.5;document.getElementById('locationText').textContent='Villa Carlos Paz (default)';
-  weatherData=await fetchWeather(userLat,userLng);renderForecast(weatherData);}
+  try{
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:300000}));
+    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+    const locName=await reverseGeocode(userLat,userLng);
+    document.getElementById('locationText').textContent=locName;
+    weatherData=await fetchWeather(userLat,userLng);
+    renderForecast(weatherData);
+  }catch(e){
+    userLat=-31.42;userLng=-64.5;
+    document.getElementById('locationText').textContent='Villa Carlos Paz (default)';
+    weatherData=await fetchWeather(userLat,userLng);
+    renderForecast(weatherData);
+  }
 }
 
 initForecast();
