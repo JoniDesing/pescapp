@@ -96,6 +96,8 @@ body.fishing-mode #sec-map>.card{border-radius:0;border:none;padding:0;margin:0;
 body.fishing-mode #sec-map>.card::before{display:none;}
 body.fishing-mode #mapContainer{height:100vh;border-radius:0;border:none;margin:0;}
 body.fishing-mode #normalControls{display:none!important;}
+body.fishing-mode #phase2>#btnCast{display:none!important;}
+body.fishing-mode #phase2>.btn-row{display:none!important;}
 body.fishing-mode #rodSection{display:none!important;}
 body.fishing-mode #statusBar{display:none!important;}
 body.fishing-mode #phase1{display:none!important;}
@@ -103,26 +105,49 @@ body.fishing-mode #phase1{display:none!important;}
 /* Floating controls for fishing mode */
 .fishing-overlay{display:none;}
 body.fishing-mode .fishing-overlay{
-  display:block;position:fixed;z-index:1000;
+  display:flex;position:fixed;z-index:1000;
 }
 .fo-status{
-  top:12px;left:12px;right:12px;
-  background:rgba(10,22,40,0.85);backdrop-filter:blur(10px);
-  border-radius:14px;padding:10px 16px;
-  display:flex;align-items:center;gap:10px;
+  top:0;left:0;right:0;
+  background:rgba(10,22,40,0.92);backdrop-filter:blur(10px);
+  padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));
+  align-items:center;gap:12px;
   font-size:0.85rem;color:var(--text);
-  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  box-shadow:0 4px 20px rgba(0,0,0,0.5);
 }
 .fo-status .fo-dist{
   font-family:'Instrument Serif',serif;
-  font-size:1.6rem;color:var(--accent2);line-height:1;
+  font-size:2rem;color:var(--accent2);line-height:1;
 }
-.fo-status .fo-lines{font-size:0.7rem;color:var(--text2);}
+.fo-status .fo-lines{font-size:0.75rem;color:var(--text2);margin-top:2px;}
+.fo-status .fo-exit{
+  width:44px;height:44px;border-radius:12px;border:none;
+  background:rgba(255,255,255,0.1);color:var(--text);font-size:1.2rem;
+  cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.fo-bottom{
+  bottom:0;left:0;right:0;
+  flex-direction:column;gap:0;
+  background:rgba(10,22,40,0.92);backdrop-filter:blur(10px);
+  padding:12px 16px;padding-bottom:max(16px,env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(0,0,0,0.5);
+}
+.fo-bottom-tools{
+  display:flex;gap:8px;margin-bottom:10px;
+}
+.fo-bottom-tools button{
+  flex:1;padding:12px;border:none;border-radius:12px;
+  background:rgba(255,255,255,0.08);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.fo-bottom-tools button:active{background:rgba(255,255,255,0.15);}
 .fo-cast-btn{
-  bottom:24px;left:16px;right:16px;
+  width:100%;
   background:linear-gradient(135deg,var(--accent),#00c488);
   color:var(--bg);
-  padding:22px;border:none;border-radius:18px;
+  padding:20px;border:none;border-radius:16px;
   font-family:'DM Sans',sans-serif;font-size:1.3rem;font-weight:700;
   cursor:pointer;
   box-shadow:0 6px 30px rgba(0,229,160,0.4);
@@ -130,18 +155,6 @@ body.fishing-mode .fishing-overlay{
   -webkit-tap-highlight-color:transparent;
 }
 .fo-cast-btn:active{transform:scale(0.97);box-shadow:0 3px 15px rgba(0,229,160,0.3);}
-.fo-tools{
-  bottom:100px;right:12px;
-  display:flex;flex-direction:column;gap:8px;
-}
-.fo-tool-btn{
-  width:48px;height:48px;border-radius:50%;border:none;
-  background:rgba(10,22,40,0.85);backdrop-filter:blur(10px);
-  color:var(--text);font-size:1.2rem;cursor:pointer;
-  box-shadow:0 2px 12px rgba(0,0,0,0.4);
-  display:flex;align-items:center;justify-content:center;
-}
-.fo-tool-btn:active{background:rgba(20,40,72,0.9);}
 
 /* Big kayak-friendly buttons */
 .big-btn{
@@ -354,11 +367,15 @@ body.fishing-mode .fishing-overlay{
           🎣 ¡Línea acá!
         </button>
         <div class="btn-row" id="normalControls">
-          <button class="big-btn-sm big-btn-secondary" onclick="toggleSatellite()">🛰️ Vista</button>
-          <button class="big-btn-sm big-btn-secondary" onclick="centerMap()">📍 Centrar</button>
-          <button class="big-btn-sm big-btn-secondary" onclick="enterFishingMode()" style="background:linear-gradient(135deg,rgba(0,229,160,0.15),rgba(0,201,255,0.1));color:var(--accent);border-color:rgba(0,229,160,0.3)">🐟 Modo Pesca</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="zoomTo(15)">🌎</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="zoomTo(17)">📏</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="zoomTo(18)" style="background:rgba(0,229,160,0.15);color:var(--accent)">🎯</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="zoomTo(20)">🔬</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="enterFishingMode()" style="background:linear-gradient(135deg,rgba(0,229,160,0.15),rgba(0,201,255,0.1));color:var(--accent);border-color:rgba(0,229,160,0.3)">🐟 Pesca</button>
         </div>
         <div class="btn-row">
+          <button class="big-btn-sm big-btn-secondary" onclick="toggleSatellite()">🛰️ Vista</button>
+          <button class="big-btn-sm big-btn-secondary" onclick="fitAllRods()">🔍 Ver todo</button>
           <button class="big-btn-sm big-btn-danger" onclick="resetSession()">🔄 Nueva sesión</button>
         </div>
       </div>
@@ -401,24 +418,30 @@ body.fishing-mode .fishing-overlay{
   </div>
 </div>
 
-<!-- FISHING MODE FLOATING OVERLAY (outside app, fixed position) -->
+<!-- FISHING MODE OVERLAY -->
 <div class="fishing-overlay fo-status" id="foStatus">
-  <div class="status-dot tracking" style="width:8px;height:8px"></div>
+  <div class="status-dot tracking" style="width:10px;height:10px"></div>
   <div style="flex:1">
     <div class="fo-dist" id="foDist">0m</div>
-    <div class="fo-lines" id="foLines">Sin líneas</div>
+    <div class="fo-lines" id="foLines">de la costa · 0 líneas</div>
   </div>
-  <div id="foRodDots" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+  <div id="foRodDots" style="display:flex;gap:4px;flex-wrap:wrap;max-width:100px"></div>
+  <button class="fo-exit" onclick="exitFishingMode()">✕</button>
 </div>
-<div class="fishing-overlay fo-tools" id="foTools">
-  <button class="fo-tool-btn" onclick="centerMap()">📍</button>
-  <button class="fo-tool-btn" onclick="toggleSatellite()">🛰️</button>
-  <button class="fo-tool-btn" onclick="fitAllRods()">🔍</button>
-  <button class="fo-tool-btn" onclick="exitFishingMode()">✕</button>
+<div class="fishing-overlay fo-bottom" id="foBottom">
+  <div class="fo-bottom-tools">
+    <button onclick="centerMap()">📍 Centrar</button>
+    <button onclick="fitAllRods()">🔍 Ver todo</button>
+    <button onclick="toggleSatellite()">🗺️ Vista</button>
+  </div>
+  <div class="fo-bottom-tools" id="foZoomBar">
+    <button onclick="zoomTo(15)" id="foz15">🌎 Lejos</button>
+    <button onclick="zoomTo(17)" id="foz17">📏 Medio</button>
+    <button onclick="zoomTo(18)" id="foz18" style="background:rgba(0,229,160,0.15);color:var(--accent)">🎯 Cerca</button>
+    <button onclick="zoomTo(20)" id="foz20">🔬 Preciso</button>
+  </div>
+  <button class="fo-cast-btn" id="foCastBtn" onclick="castLine()">🎣 ¡Línea acá!</button>
 </div>
-<button class="fishing-overlay fo-cast-btn" id="foCastBtn" onclick="castLine()">
-  🎣 ¡Línea acá!
-</button>
 
 <script>
 // =================== GLOBALS ===================
@@ -926,7 +949,20 @@ function toggleSatellite(){
 
 function centerMap(){
   if(!map||!userLat)return;
-  map.setView([userLat,userLng],17);
+  map.setView([userLat,userLng],map.getZoom());
+}
+
+function zoomTo(level){
+  if(!map||!userLat)return;
+  map.setView([userLat,userLng],level);
+  // Highlight active zoom button
+  ['foz15','foz17','foz18','foz20'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.style.background=el.id==='foz'+level?'rgba(0,229,160,0.15)':'';
+      el.style.color=el.id==='foz'+level?'var(--accent)':'';
+    }
+  });
 }
 
 function updateStatus(type,html){
